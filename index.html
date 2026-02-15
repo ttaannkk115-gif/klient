@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вызвать Электрика ⚡</title>
-    
+    <title>Электро-Шабашка PRO ⚡</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
     <style>
         :root { --primary: #27ae60; --dark: #2c3e50; --light: #f4f7f6; --urgent: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; padding: 15px; }
         .header { text-align: center; padding: 20px 0; }
-        .order-form { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .order-form { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .btn-send { background: var(--dark); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .order-card { background: white; padding: 15px; border-radius: 12px; margin-top: 10px; border-left: 5px solid #ccc; }
+        .btn-send { background: var(--dark); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-send:disabled { background: #95a5a6; }
+        #myOrders { max-width: 500px; margin: 20px auto; }
+        .order-card { background: white; padding: 15px; border-radius: 12px; margin-top: 10px; border-left: 5px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -31,11 +31,11 @@
         <option>Хасавюрт</option>
     </select>
     <textarea id="desc" rows="3" placeholder="Что нужно сделать?"></textarea>
-    <input type="text" id="address" placeholder="Адрес">
-    <input type="tel" id="phone" placeholder="+79XXXXXXXXX">
+    <input type="text" id="address" placeholder="Улица, дом">
+    <input type="tel" id="phone" placeholder="+7 (___) ___-__-__">
     
     <label style="display:flex; align-items:center; gap:10px; color:var(--urgent); font-weight:bold; margin:10px 0">
-        <input type="checkbox" id="urgent"> 🔥 СРОЧНО
+        <input type="checkbox" id="urgent" style="width: auto;"> 🔥 СРОЧНО
     </label>
 
     <button id="submitBtn" class="btn-send" onclick="createOrder()">ОТПРАВИТЬ МАСТЕРУ</button>
@@ -44,7 +44,6 @@
 <div id="myOrders"></div>
 
 <script>
-    // 1. Настройки (Уже вписаны ваши данные)
     const firebaseConfig = {
         apiKey: "AIzaSyAjoW4lVBACbjp3a9LZTLUtjsNpFLeXArk",
         authDomain: "shabashka-8e433.firebaseapp.com",
@@ -60,9 +59,8 @@
     let clientId = localStorage.getItem('client_id') || ('C' + Math.floor(Math.random() * 100000));
     localStorage.setItem('client_id', clientId);
 
-    // 2. Улучшенная функция отправки с проверкой ошибок
+    // НОВАЯ ФУНКЦИЯ ОТПРАВКИ (Через обход блокировок браузера)
     async function sendToTelegram(orderData) {
-        const url = `https://api.telegram.org/bot${TG_TOKEN}/sendMessage`;
         const text = `🚨 *НОВЫЙ ЗАКАЗ*\n\n` +
                      `🏙 *Город:* ${orderData.city}\n` +
                      `🛠 *Что:* ${orderData.desc}\n` +
@@ -70,32 +68,30 @@
                      `📞 *Тел:* ${orderData.phone}\n` +
                      `${orderData.isUrgent ? '🔥 *СРОЧНО!*' : ''}`;
 
+        // Используем сервис-посредник, чтобы браузер не блокировал запрос
+        const proxyUrl = "https://api.allorigins.win/get?url=";
+        const tgUrl = `https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent(text)}&parse_mode=Markdown`;
+
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    chat_id: TG_CHAT_ID,
-                    text: text,
-                    parse_mode: 'Markdown'
-                })
-            });
+            const response = await fetch(proxyUrl + encodeURIComponent(tgUrl));
+            const data = await response.json();
             
-            const result = await response.json();
-            
-            if (!result.ok) {
-                // Если Telegram не принял сообщение, вы увидите причину
-                alert("Ошибка Telegram: " + result.description);
+            // Проверка: успешно ли прошел запрос через прокси
+            if (data.contents.includes('"ok":true')) {
+                console.log("TG Success");
+                return true;
             } else {
-                console.log("Успешно отправлено!");
+                alert("Ошибка Telegram API. Проверьте, запущен ли бот.");
+                return false;
             }
         } catch (e) {
-            alert("Ошибка сети! Проверьте интернет или VPN. " + e.message);
+            console.error(e);
+            alert("Не удалось связаться с Telegram. Попробуйте обновить страницу.");
+            return false;
         }
     }
 
-    // 3. Создание заказа
-    function createOrder() {
+    async function createOrder() {
         const desc = document.getElementById('desc').value.trim();
         const addr = document.getElementById('address').value.trim();
         const phone = document.getElementById('phone').value.trim();
@@ -103,7 +99,7 @@
         const urgent = document.getElementById('urgent').checked;
 
         if (!desc || !addr || !phone) {
-            alert("Заполните все поля!");
+            alert("Заполните описание, адрес и телефон!");
             return;
         }
 
@@ -112,7 +108,7 @@
         btn.innerText = "ОТПРАВЛЯЮ...";
 
         const orderData = {
-            id: 'ID' + Date.now(),
+            id: 'ID-' + Date.now(),
             authorId: clientId,
             city: city,
             desc: desc,
@@ -123,24 +119,26 @@
             status: 'active'
         };
 
-        // Сначала пробуем отправить в Телеграм
-        sendToTelegram(orderData).then(() => {
-            // Затем сохраняем в базу
-            db.ref('tasks').push(orderData).then(() => {
-                alert("✅ Заявка отправлена!");
-                document.getElementById('desc').value = '';
-                document.getElementById('address').value = '';
-                btn.disabled = false;
-                btn.innerText = "ОТПРАВИТЬ МАСТЕРУ";
-            });
-        });
+        // Сначала шлем в Телеграм
+        const tgSent = await sendToTelegram(orderData);
+        
+        if (tgSent) {
+            // Если в ТГ ушло, пишем в базу
+            await db.ref('tasks').push(orderData);
+            alert("✅ Заказ принят! Проверьте ваш Telegram.");
+            document.getElementById('desc').value = '';
+            document.getElementById('address').value = '';
+        }
+
+        btn.disabled = false;
+        btn.innerText = "ОТПРАВИТЬ МАСТЕРУ";
     }
 
-    // 4. Отображение списка
+    // Слушатель заказов для отображения списка
     db.ref('tasks').on('value', (snapshot) => {
         const data = snapshot.val();
         const container = document.getElementById('myOrders');
-        container.innerHTML = '<h3>Мои заказы:</h3>';
+        container.innerHTML = '<h3>Мои заявки:</h3>';
         if (!data) return;
         Object.values(data).reverse().forEach(task => {
             if (task.authorId === clientId) {
