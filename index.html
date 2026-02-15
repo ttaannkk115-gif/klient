@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вызвать Электрика ⚡ (Клиент)</title>
+    <title>Вызвать Электрика ⚡</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -12,37 +12,30 @@
         :root { --primary: #27ae60; --dark: #2c3e50; --light: #f4f7f6; --urgent: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; padding: 15px; }
         .header { text-align: center; padding: 20px 0; }
-        .header h1 { margin: 0; color: var(--dark); font-size: 22px; }
-        .order-form { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
-        .btn-send { background: var(--dark); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
-        .btn-send:active { transform: scale(0.98); }
-        .order-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid #ccc; }
-        .status-taken { border-left-color: var(--primary); background: #f0fff4; }
+        .order-form { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn-send { background: var(--dark); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .order-card { background: white; padding: 15px; border-radius: 12px; margin-top: 10px; border-left: 5px solid #ccc; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>⚡ Электро-Шабашка</h1>
-    <small>Заказ электрика: Махачкала, Каспийск и др.</small>
 </div>
 
 <div class="order-form">
-    <h3 style="margin-top:0">Оформить заявку</h3>
     <select id="city">
         <option>Махачкала</option>
-        <option>Каспийск</option> 
+        <option>Каспийск</option>
         <option>Хасавюрт</option>
-        <option>Кизилюрт</option>
-        <option>Буйнакск</option>
     </select>
     <textarea id="desc" rows="3" placeholder="Что нужно сделать?"></textarea>
-    <input type="text" id="address" placeholder="Адрес (Улица, дом)">
-    <input type="tel" id="phone" placeholder="+79XXXXXXXXX" maxlength="12">
+    <input type="text" id="address" placeholder="Адрес">
+    <input type="tel" id="phone" placeholder="+79XXXXXXXXX">
     
-    <label style="display:flex; align-items:center; gap:10px; color:var(--urgent); font-weight:bold; margin:15px 0">
-        <input type="checkbox" id="urgent" style="width:auto"> 🔥 СРОЧНО
+    <label style="display:flex; align-items:center; gap:10px; color:var(--urgent); font-weight:bold; margin:10px 0">
+        <input type="checkbox" id="urgent"> 🔥 СРОЧНО
     </label>
 
     <button id="submitBtn" class="btn-send" onclick="createOrder()">ОТПРАВИТЬ МАСТЕРУ</button>
@@ -51,7 +44,7 @@
 <div id="myOrders"></div>
 
 <script>
-    // 1. Настройки Firebase
+    // 1. Настройки (Уже вписаны ваши данные)
     const firebaseConfig = {
         apiKey: "AIzaSyAjoW4lVBACbjp3a9LZTLUtjsNpFLeXArk",
         authDomain: "shabashka-8e433.firebaseapp.com",
@@ -61,16 +54,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 2. Настройки Telegram (Уже настроено для вас!)
     const TG_TOKEN = "8497589817:AAGemGImjt0A4Kvzc2NvqB2eAbElqkR4H_Y";
     const TG_CHAT_ID = "6786721925";
 
     let clientId = localStorage.getItem('client_id') || ('C' + Math.floor(Math.random() * 100000));
     localStorage.setItem('client_id', clientId);
 
-    // Функция отправки уведомления в Telegram
+    // 2. Улучшенная функция отправки с проверкой ошибок
     async function sendToTelegram(orderData) {
-        const text = `🚨 *НОВЫЙ ЗАКАЗ В ПРИЛОЖЕНИИ*\n\n` +
+        const url = `https://api.telegram.org/bot${TG_TOKEN}/sendMessage`;
+        const text = `🚨 *НОВЫЙ ЗАКАЗ*\n\n` +
                      `🏙 *Город:* ${orderData.city}\n` +
                      `🛠 *Что:* ${orderData.desc}\n` +
                      `📍 *Адрес:* ${orderData.addr}\n` +
@@ -78,7 +71,7 @@
                      `${orderData.isUrgent ? '🔥 *СРОЧНО!*' : ''}`;
 
         try {
-            await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -87,66 +80,73 @@
                     parse_mode: 'Markdown'
                 })
             });
-        } catch (e) { console.error("Ошибка TG:", e); }
+            
+            const result = await response.json();
+            
+            if (!result.ok) {
+                // Если Telegram не принял сообщение, вы увидите причину
+                alert("Ошибка Telegram: " + result.description);
+            } else {
+                console.log("Успешно отправлено!");
+            }
+        } catch (e) {
+            alert("Ошибка сети! Проверьте интернет или VPN. " + e.message);
+        }
     }
 
-    // Создание заказа
+    // 3. Создание заказа
     function createOrder() {
         const desc = document.getElementById('desc').value.trim();
         const addr = document.getElementById('address').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const city = document.getElementById('city').value;
-        const isUrgent = document.getElementById('urgent').checked;
+        const urgent = document.getElementById('urgent').checked;
 
-        if (desc.length < 3 || addr.length < 3 || phone.length < 10) {
-            return alert("Пожалуйста, заполните все поля корректно");
+        if (!desc || !addr || !phone) {
+            alert("Заполните все поля!");
+            return;
         }
 
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerText = "ОТПРАВКА...";
+        btn.innerText = "ОТПРАВЛЯЮ...";
 
-        const newOrderRef = db.ref('tasks').push();
         const orderData = {
-            id: newOrderRef.key,
+            id: 'ID' + Date.now(),
             authorId: clientId,
             city: city,
             desc: desc,
             addr: addr,
             phone: phone,
-            isUrgent: isUrgent,
+            isUrgent: urgent,
             timestamp: new Date().toLocaleString('ru-RU'),
             status: 'active'
         };
 
-        newOrderRef.set(orderData).then(() => {
-            // Отправляем в Telegram
-            sendToTelegram(orderData);
-            
-            alert("✅ Заявка принята! Уведомление отправлено мастеру.");
-            document.getElementById('desc').value = '';
-            document.getElementById('address').value = '';
-            btn.disabled = false;
-            btn.innerText = "ОТПРАВИТЬ МАСТЕРУ";
+        // Сначала пробуем отправить в Телеграм
+        sendToTelegram(orderData).then(() => {
+            // Затем сохраняем в базу
+            db.ref('tasks').push(orderData).then(() => {
+                alert("✅ Заявка отправлена!");
+                document.getElementById('desc').value = '';
+                document.getElementById('address').value = '';
+                btn.disabled = false;
+                btn.innerText = "ОТПРАВИТЬ МАСТЕРУ";
+            });
         });
     }
 
-    // Слушатель ваших заказов
+    // 4. Отображение списка
     db.ref('tasks').on('value', (snapshot) => {
         const data = snapshot.val();
         const container = document.getElementById('myOrders');
         container.innerHTML = '<h3>Мои заказы:</h3>';
         if (!data) return;
-
         Object.values(data).reverse().forEach(task => {
             if (task.authorId === clientId) {
                 const div = document.createElement('div');
-                div.className = `order-card ${task.status === 'taken' ? 'status-taken' : ''}`;
-                div.innerHTML = `
-                    <strong>${task.desc}</strong><br>
-                    <small>📍 ${task.addr}</small><br>
-                    <small style="color:gray">${task.timestamp} | ${task.status === 'taken' ? '✅ Принят' : '⏳ В поиске'}</small>
-                `;
+                div.className = 'order-card';
+                div.innerHTML = `<strong>${task.desc}</strong><br><small>📍 ${task.addr}</small>`;
                 container.appendChild(div);
             }
         });
