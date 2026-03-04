@@ -1,19 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Загрузка калькулятора...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VOLT MASTER - КЛИЕНТ</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
     <style>
-        body { margin: 0; padding: 0; background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; }
+        :root {
+            --main-gold: #ffc107;
+            --dark-bg: #0f0f0f;
+            --card-bg: rgba(255, 255, 255, 0.07);
+            --text-main: #ffffff;
+            --text-dim: #999999;
+            --success: #4caf50;
+            --process: #2196f3;
+            --danger: #ff4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            margin: 0; background: var(--dark-bg);
+            background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000 100%);
+            color: var(--text-main); padding-bottom: 120px; min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        header { padding: 20px 20px 10px; text-align: center; }
+        .logo { font-size: 24px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
+        .logo span { color: var(--main-gold); }
+        
+        .user-id-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255, 193, 7, 0.05); padding: 5px 15px;
+            border-radius: 20px; font-size: 11px; margin-top: 8px;
+            border: 1px solid rgba(255, 193, 7, 0.1); color: var(--main-gold);
+            font-weight: bold;
+        }
+
+        .card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 18px; margin: 0 15px 12px; position: relative; }
+        .card-header { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 8px; }
+        .tag-city { color: var(--main-gold); font-weight: bold; }
+        
+        .badge-status { font-size: 9px; padding: 4px 8px; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 10px; text-transform: uppercase; }
+        .bg-free { background: rgba(255,255,255,0.1); color: #fff; }
+        .bg-busy { background: rgba(33, 150, 243, 0.2); color: var(--process); }
+
+        .rej-box { background: rgba(255, 68, 68, 0.05); border: 1px dashed rgba(255, 68, 68, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 10px; font-size: 11px; color: #ff8888; }
+
+        .btn { border: none; padding: 14px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 13px; margin-top: 5px; transition: 0.3s; }
+        .btn-main { background: var(--main-gold); color: #000; }
+        .btn-cancel { background: rgba(255, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); flex: 1; }
+        .btn-report { background: rgba(255, 255, 255, 0.05); color: #888; border: 1px solid #333; font-size: 11px; padding: 8px; flex: 1; }
+
+        nav { position: fixed; bottom: 0; width: 100%; background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; padding: 15px 0 25px; z-index: 1000; }
+        nav button { background: none; border: none; color: #555; font-size: 10px; font-weight: bold; display: flex; flex-direction: column; align-items: center; flex: 1; gap: 5px; outline: none; }
+        nav button.active { color: var(--main-gold); }
+
+        .hidden { display: none; }
+        input, select { background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 12px; padding: 14px; color: #fff; width: 100%; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
     </style>
-    <meta http-equiv="refresh" content="0; url=https://ttaannkk115-gif.github.io/kalculator/">
 </head>
 <body>
-    <script>
-        // Дополнительный метод перенаправления через JavaScript для надежности
-        window.location.href = "https://ttaannkk115-gif.github.io/kalculator/";
-    </script>
-    <p>Загрузка...</p>
+
+<header>
+    <div class="logo">VOLT<span>MASTER</span></div>
+    <div class="user-id-badge"><span id="display-id">ID: ----</span></div>
+</header>
+
+<div id="view-add" style="padding: 20px;">
+    <select id="city-input">
+        <option value="Махачкала">Махачкала</option>
+        <option value="Каспийск">Каспийск</option>
+        <option value="Буйнакск">Буйнакск</option>
+    </select>
+    <input type="text" id="task" placeholder="Что нужно сделать?">
+    <input type="text" id="address" placeholder="Адрес (улица, дом)">
+    <input type="tel" id="phone" placeholder="+7 (___) ___-__-__">
+    <button class="btn btn-main" onclick="saveOrder()">ОПУБЛИКОВАТЬ ЗАЯВКУ</button>
+</div>
+
+<div id="view-list" class="hidden"><div id="my-orders-list"></div></div>
+<div id="view-archive" class="hidden"><div id="archive-list"></div></div>
+
+<nav>
+    <button onclick="changeView('add', this)" class="active"><i>➕</i>СОЗДАТЬ</button>
+    <button onclick="changeView('list', this)"><i>📋</i>МОИ ЗАКАЗЫ</button>
+    <button onclick="changeView('archive', this)"><i>📁</i>АРХИВ</button>
+</nav>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyD-dIC8bm8y4kaY7RXmMrys2wOMLA5o8vY",
+        authDomain: "voltmaster-332c0.firebaseapp.com",
+        databaseURL: "https://voltmaster-332c0-default-rtdb.firebaseio.com",
+        projectId: "voltmaster-332c0",
+        storageBucket: "voltmaster-332c0.firebasestorage.app",
+        messagingSenderId: "312337098429",
+        appId: "1:312337098429:web:663e0f6787bd62d19bf9d4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let userID = localStorage.getItem('volt_client_uid') || Math.floor(1000 + Math.random() * 9000).toString();
+    localStorage.setItem('volt_client_uid', userID);
+    document.getElementById('display-id').innerText = "ID: " + userID;
+
+    // Маска телефона (соответствует оригиналу)
+    document.getElementById('phone').addEventListener('input', (e) => {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+        if (!x[2]) e.target.value = x[1] ? '+7 (' : '';
+        else e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+    });
+
+    function initSync() {
+        db.ref('shabashki/active').on('value', snap => {
+            const all = Object.values(snap.val() || {});
+            renderList(all.filter(o => o.ownerID == userID), 'my-orders-list', true);
+        });
+        db.ref('shabashki/archive').on('value', snap => {
+            const all = Object.values(snap.val() || {});
+            renderList(all.filter(o => o.ownerID == userID), 'archive-list', false);
+        });
+    }
+
+    function renderList(orders, containerId, isActive) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = orders.length ? '' : '<div style="text-align:center;padding:50px;color:#444">Пусто</div>';
+        
+        orders.sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
+            const isBusy = o.status === 'busy';
+            let rejectionsHtml = o.rejections ? `<div class="rej-box">${Object.values(o.rejections).map(r => `• ${r.text}`).join('<br>')}</div>` : '';
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            if(!isActive) card.style.opacity = '0.6';
+
+            card.innerHTML = `
+                <div class="card-header"><span class="tag-city">${o.city}</span><span>${isActive ? o.date : (o.closedAt || 'Ок')}</span></div>
+                <span class="badge-status ${isBusy ? 'bg-busy' : 'bg-free'}">${!isActive ? '✅ ГОТОВО' : (isBusy ? '⏳ МАСТЕР В ПУТИ' : '🔘 ПОИСК')}</span>
+                <h3 style="margin:5px 0">${o.task}</h3>
+                <div style="font-size:12px;color:#888">📍 ${o.addr}</div>
+                ${rejectionsHtml}
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    ${isActive && !isBusy ? `<button class="btn btn-cancel" onclick="cancelOrder('${o.id}')">ОТМЕНА</button>` : ''}
+                    <button class="btn btn-report" onclick="sendComplaint('${o.id}', '${o.task}', '${o.workerID || '---'}')">ЖАЛОБА</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function cancelOrder(id) {
+        if(confirm("Удалить вашу заявку?")) db.ref(`shabashki/active/${id}`).remove();
+    }
+
+    function sendComplaint(id, task, worker) {
+        const message = `⚠️ ЖАЛОБА (ID: ${userID})\nЗаказ: ${task}\nМастер: ${worker}`;
+        window.open(`https://wa.me/79640040355?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    function saveOrder() {
+        const task = document.getElementById('task').value;
+        const addr = document.getElementById('address').value;
+        const phone = document.getElementById('phone').value;
+        const city = document.getElementById('city-input').value;
+
+        if(!task || !addr || phone.length < 18) return alert("Заполните поля!");
+
+        const id = Date.now().toString();
+        const data = {
+            id, task, addr, phone, city, ownerID: userID, status: 'free',
+            date: new Date().toLocaleString('ru-RU', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}),
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        db.ref('shabashki/active/' + id).set(data).then(() => {
+            // Уведомление для приложения мастеров (соответствует оригиналу)
+            db.ref('push_queue').push({ 
+                title: "НОВАЯ ШАБАШКА! 🔥", 
+                body: city + ": " + task,
+                timestamp: firebase.database.ServerValue.TIMESTAMP 
+            });
+            alert("Заявка создана!");
+            resetForm();
+            changeView('list', document.querySelectorAll('nav button')[1]);
+        });
+    }
+
+    function changeView(view, btn) {
+        ['view-add', 'view-list', 'view-archive'].forEach(v => document.getElementById(v).classList.add('hidden'));
+        document.getElementById('view-' + view).classList.remove('hidden');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+    }
+
+    function resetForm() {
+        document.getElementById('task').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('phone').value = '';
+    }
+
+    window.onload = initSync;
+</script>
 </body>
 </html>
