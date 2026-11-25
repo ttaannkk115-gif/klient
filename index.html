@@ -1,215 +1,661 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VOLT MASTER - КЛИЕНТ</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Сборка щитка (Плавно и без следов)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  
+  html, body { 
+    height: 100%; 
+    height: 100dvh; 
+    overflow: hidden; 
+    font-family: Arial, sans-serif; 
+    background: #2c3e50;
+  }
 
-    <style>
-        :root {
-            --main-gold: #ffc107;
-            --dark-bg: #0f0f0f;
-            --card-bg: rgba(255, 255, 255, 0.07);
-            --text-main: #ffffff;
-            --text-dim: #999999;
-            --success: #4caf50;
-            --process: #2196f3;
-            --danger: #ff4444;
-        }
+  #app { 
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
+    height: 100dvh; 
+    width: 100%;
+  }
 
-        body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            margin: 0; background: var(--dark-bg);
-            background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000 100%);
-            color: var(--text-main); padding-bottom: 120px; min-height: 100vh;
-            -webkit-tap-highlight-color: transparent;
-            overflow-x: hidden;
-        }
+  /* ВЕРХНЕЕ МЕНЮ */
+  #menu {
+    display: flex;
+    background: #2c3e50;
+    padding: 8px;
+    gap: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    z-index: 10;
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .menu-item {
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    min-width: 65px;
+    flex-shrink: 0;
+  }
+  .menu-item img { height: 55px; width: auto; pointer-events: none; }
+  .menu-item span { font-size: 11px; font-weight: bold; color: #2c3e50; margin-top: 4px; }
 
-        header { padding: 20px 20px 10px; text-align: center; }
-        .logo { font-size: 24px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
-        .logo span { color: var(--main-gold); }
-        
-        .user-id-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(255, 193, 7, 0.05); padding: 5px 15px;
-            border-radius: 20px; font-size: 11px; margin-top: 8px;
-            border: 1px solid rgba(255, 193, 7, 0.1); color: var(--main-gold);
-            font-weight: bold;
-        }
+  /* РАБОЧАЯ ОБЛАСТЬ */
+  #workspace {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: #fafafa;
+    touch-action: none;
+    width: 100%;
+  }
 
-        .card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 18px; margin: 0 15px 12px; position: relative; }
-        .card-header { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 8px; }
-        .tag-city { color: var(--main-gold); font-weight: bold; }
-        
-        .badge-status { font-size: 9px; padding: 4px 8px; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 10px; text-transform: uppercase; }
-        .bg-free { background: rgba(255,255,255,0.1); color: #fff; }
-        .bg-busy { background: rgba(33, 150, 243, 0.2); color: var(--process); }
+  #gridCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
 
-        .rej-box { background: rgba(255, 68, 68, 0.05); border: 1px dashed rgba(255, 68, 68, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 10px; font-size: 11px; color: #ff8888; }
+  #itemsLayer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    transform-origin: 0 0;
+    will-change: transform;
+    z-index: 2;
+    pointer-events: none;
+  }
 
-        .btn { border: none; padding: 14px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 13px; margin-top: 5px; transition: 0.3s; }
-        .btn-main { background: var(--main-gold); color: #000; }
-        .btn-cancel { background: rgba(255, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); flex: 1; }
-        .btn-report { background: rgba(255, 255, 255, 0.05); color: #888; border: 1px solid #333; font-size: 11px; padding: 8px; flex: 1; }
+  .breaker {
+    position: absolute;
+    top: 0; left: 0;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: auto;
+    z-index: 10;
+    /* will-change ускоряет отрисовку на GPU */
+    will-change: transform;
+    /* Используем transform вместо left/top для плавности */
+    transform: translate3d(0, 0, 0);
+  }
+  
+  .breaker.dragging { z-index: 100; }
+  
+  /* Подсветка при пересечении */
+  .breaker.collision {
+    filter: drop-shadow(0 0 8px rgba(231, 76, 60, 0.9));
+    opacity: 0.8;
+  }
+  .breaker.over-trash { opacity: 0.4; }
+  
+  .breaker img {
+    display: block;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    width: 100%; height: 100%;
+  }
 
-        nav { position: fixed; bottom: 0; width: 100%; background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; padding: 15px 0 25px; z-index: 1000; }
-        nav button { background: none; border: none; color: #555; font-size: 10px; font-weight: bold; display: flex; flex-direction: column; align-items: center; flex: 1; gap: 5px; outline: none; }
-        nav button.active { color: var(--main-gold); }
+  /* КОРЗИНА */
+  #trash {
+    position: absolute;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    right: 24px;
+    width: 70px;
+    height: 70px;
+    background: #e74c3c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    z-index: 9999;
+    transition: transform 0.15s, background 0.15s;
+    border: 3px solid #fff;
+  }
+  #trash.active {
+    transform: scale(1.2);
+    background: #c0392b;
+    box-shadow: 0 0 0 6px rgba(231,76,60,0.4);
+  }
 
-        .hidden { display: none; }
-        input, select { background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 12px; padding: 14px; color: #fff; width: 100%; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
-    </style>
+  #zoomInfo {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(44,62,80,0.9);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 50;
+    pointer-events: none;
+  }
+
+  #hint {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(44,62,80,0.9);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 50;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    text-align: center;
+  }
+
+  /* МОДАЛЬНОЕ ОКНО */
+  #modalOverlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+  #modalOverlay.show { display: flex; }
+  
+  #modalBox {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  }
+  #modalBox h3 { margin-bottom: 15px; color: #2c3e50; font-size: 18px; }
+  #modalInput {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 15px;
+    outline: none;
+  }
+  #modalInput:focus { border-color: #3498db; }
+  
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+  }
+  .modal-btns button {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  #btnCancel { background: #e0e0e0; color: #333; }
+  #btnSave { background: #2ecc71; color: #fff; }
+</style>
 </head>
 <body>
 
-<header>
-    <div class="logo">VOLT<span>MASTER</span></div>
-    <div class="user-id-badge"><span id="display-id">ID: ----</span></div>
-</header>
+<div id="app">
+  <div id="menu"></div>
 
-<div id="view-add" style="padding: 20px;">
-    <select id="city-input">
-        <option value="Махачкала">Махачкала</option>
-        <option value="Каспийск">Каспийск</option>
-        <option value="Буйнакск">Буйнакск</option>
-        <option value="Хасавюрт">Хасавюрт</option>
-        <option value="Кизилюрт">Кизилюрт</option>
-        <option value="Избербаш">Избербаш</option>
-        <option value="Дербент">Дербент</option>
-    </select>
-    <input type="text" id="task" placeholder="Что нужно сделать?">
-    <input type="text" id="address" placeholder="Адрес (улица, дом)">
-    <input type="tel" id="phone" placeholder="+7 (___) ___-__-__">
-    <button class="btn btn-main" onclick="saveOrder()">ОПУБЛИКОВАТЬ ЗАЯВКУ</button>
+  <div id="workspace">
+    <canvas id="gridCanvas"></canvas>
+    <div id="itemsLayer"></div>
+    
+    <div id="hint">Двойной тап — ввод номинала. Ставятся вплотную.</div>
+    <div id="zoomInfo">100%</div>
+
+    <div id="trash">🗑</div>
+  </div>
 </div>
 
-<div id="view-list" class="hidden"><div id="my-orders-list"></div></div>
-<div id="view-archive" class="hidden"><div id="archive-list"></div></div>
-
-<nav>
-    <button onclick="changeView('add', this)" class="active"><i>➕</i>СОЗДАТЬ</button>
-    <button onclick="changeView('list', this)"><i>📋</i>МОИ ЗАКАЗЫ</button>
-    <button onclick="changeView('archive', this)"><i>📁</i>АРХИВ</button>
-</nav>
+<!-- МОДАЛЬНОЕ ОКНО -->
+<div id="modalOverlay">
+  <div id="modalBox">
+    <h3>Введите номинал (А)</h3>
+    <input type="number" id="modalInput" placeholder="Например: 16" min="1" max="9999">
+    <div class="modal-btns">
+      <button id="btnCancel">Отмена</button>
+      <button id="btnSave">Сохранить</button>
+    </div>
+  </div>
+</div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyD-dIC8bm8y4kaY7RXmMrys2wOMLA5o8vY",
-        authDomain: "voltmaster-332c0.firebaseapp.com",
-        databaseURL: "https://voltmaster-332c0-default-rtdb.firebaseio.com",
-        projectId: "voltmaster-332c0",
-        storageBucket: "voltmaster-332c0.firebasestorage.app",
-        messagingSenderId: "312337098429",
-        appId: "1:312337098429:web:663e0f6787bd62d19bf9d4"
-    };
+// ==========================================
+// ГЕНЕРАТОРЫ (БЕЗ ИЗМЕНЕНИЙ)
+// ==========================================
+function generateSVG(totalWidth, poles, amps = '') {
+  const h = 130, padding = 2;
+  const innerW = totalWidth - padding * 2;
+  const poleW = innerW / poles;
+  const text = amps ? (amps.length > 3 ? amps.substring(0,3) : amps) : '';
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${h}" viewBox="0 0 ${totalWidth} ${h}">`;
+  svg += `<rect x="${padding}" y="5" width="${innerW}" height="${h-10}" fill="#fff" stroke="#bbb" stroke-width="1"/>`;
+  svg += `<rect x="${padding}" y="5" width="${innerW}" height="25" fill="#f5f5f5" stroke="#bbb" stroke-width="1"/>`;
+  for (let i = 1; i < poles; i++) {
+    const x = padding + poleW * i;
+    svg += `<line x1="${x}" y1="5" x2="${x}" y2="${h-5}" stroke="#ccc" stroke-width="1"/>`;
+  }
+  for (let i = 0; i < poles; i++) {
+    const cx = padding + poleW * i + poleW / 2;
+    svg += `<circle cx="${cx}" cy="17" r="6" fill="#888" stroke="#555" stroke-width="1"/>`;
+    svg += `<circle cx="${cx}" cy="17" r="3" fill="#333"/>`;
+    svg += `<circle cx="${cx}" cy="113" r="6" fill="#888" stroke="#555" stroke-width="1"/>`;
+    svg += `<circle cx="${cx}" cy="113" r="3" fill="#333"/>`;
+    svg += `<rect x="${cx - 5}" y="88" width="10" height="6" fill="#fff" stroke="#ccc" stroke-width="0.5"/>`;
+    if (text) {
+      svg += `<text x="${cx}" y="93" font-family="Arial" font-size="4" font-weight="bold" fill="#000" text-anchor="middle">${text}A</text>`;
+    }
+  }
+  const leverY = 65, leverH = 20, leverTopY = 45, leverTopH = 20;
+  if (poles === 1) {
+    const cx = padding + poleW / 2;
+    svg += `<rect x="${cx - 7}" y="${leverY}" width="14" height="${leverH}" fill="#2b6cb0" rx="1"/>`;
+    svg += `<rect x="${cx - 5}" y="${leverTopY}" width="10" height="${leverTopH}" fill="#2b6cb0" rx="1"/>`;
+    svg += `<text x="${cx}" y="59" font-family="Arial" font-size="4" font-weight="bold" fill="#fff" text-anchor="middle" transform="rotate(90 ${cx} 59)">OFF</text>`;
+  } else {
+    const totalLeverW = (poleW * poles) - 10;
+    const startX = padding + 5;
+    svg += `<rect x="${startX}" y="${leverY}" width="${totalLeverW}" height="${leverH}" fill="#2b6cb0" rx="2"/>`;
+    svg += `<rect x="${startX + 2}" y="${leverTopY}" width="${totalLeverW - 4}" height="${leverTopH}" fill="#2b6cb0" rx="2"/>`;
+    for (let i = 1; i < poles; i++) {
+      const x = padding + poleW * i;
+      svg += `<line x1="${x}" y1="${leverY}" x2="${x}" y2="${leverY + leverH}" stroke="#1e4e8c" stroke-width="1"/>`;
+      svg += `<line x1="${x}" y1="${leverTopY}" x2="${x}" y2="${leverTopY + leverTopH}" stroke="#1e4e8c" stroke-width="1"/>`;
+    }
+    const centerX = padding + innerW / 2;
+    svg += `<text x="${centerX}" y="59" font-family="Arial" font-size="5" font-weight="bold" fill="#fff" text-anchor="middle">OFF</text>`;
+  }
+  const cx1 = padding + poleW / 2;
+  if (poleW > 15) {
+    svg += `<text x="${cx1}" y="38" font-family="Arial" font-size="5" font-weight="bold" fill="#0066cc" text-anchor="middle">CHNT</text>`;
+    svg += `<text x="${cx1}" y="44" font-family="Arial" font-size="3" fill="#666" text-anchor="middle">DZ47-60</text>`;
+  }
+  svg += `</svg>`;
+  return svg;
+}
 
-    let userID = localStorage.getItem('volt_client_uid') || Math.floor(1000 + Math.random() * 9000).toString();
-    localStorage.setItem('volt_client_uid', userID);
-    document.getElementById('display-id').innerText = "ID: " + userID;
+function generateCHNTSVG(amps = '') {
+  const w = 120, h = 160;
+  const text = amps ? (amps.length > 3 ? amps.substring(0,3) : amps) + 'A' : '';
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  svg += `<rect x="5" y="10" width="110" height="140" rx="4" fill="#f0f0f0" stroke="#999" stroke-width="1"/>`;
+  svg += `<rect x="5" y="10" width="110" height="35" rx="4" fill="#e8e8e8" stroke="#999" stroke-width="1"/>`;
+  svg += `<rect x="5" y="115" width="110" height="35" rx="4" fill="#e8e8e8" stroke="#999" stroke-width="1"/>`;
+  svg += `<rect x="10" y="45" width="100" height="3" fill="#0066cc"/>`;
+  svg += `<text x="15" y="42" font-family="Arial" font-size="12" font-weight="bold" fill="#0066cc">CHNT</text>`;
+  svg += `<text x="15" y="55" font-family="Arial" font-size="4" fill="#333">NM1-400S/3300</text>`;
+  svg += `<text x="15" y="63" font-family="Arial" font-size="4" fill="#333">In = ${amps || '---'}A</text>`;
+  svg += `<text x="15" y="69" font-family="Arial" font-size="4" fill="#333">Ui 800V</text>`;
+  svg += `<text x="15" y="75" font-family="Arial" font-size="4" fill="#333">Uimp 8kV</text>`;
+  svg += `<circle cx="20" cy="95" r="4" fill="#ff8c00"/>`;
+  svg += `<text x="28" y="97" font-family="Arial" font-size="4" fill="#333">PUSH TO TRIP</text>`;
+  svg += `<rect x="45" y="50" width="30" height="50" rx="2" fill="#222" stroke="#000" stroke-width="1"/>`;
+  svg += `<rect x="47" y="52" width="26" height="18" fill="#333"/>`;
+  svg += `<rect x="47" y="80" width="26" height="18" fill="#333"/>`;
+  svg += `<rect x="45" y="72" width="30" height="12" fill="#0055aa"/>`;
+  if (text) {
+    svg += `<text x="60" y="80" font-family="Arial" font-size="7" font-weight="bold" fill="#fff" text-anchor="middle">${text}</text>`;
+  }
+  svg += `<rect x="80" y="55" width="30" height="40" fill="#fff" stroke="#999" stroke-width="0.5"/>`;
+  svg += `<text x="95" y="62" font-family="Arial" font-size="3" fill="#333" text-anchor="middle">Ue (V)</text>`;
+  svg += `<text x="95" y="68" font-family="Arial" font-size="3" fill="#333" text-anchor="middle">380/415</text>`;
+  for(let i=0; i<3; i++) {
+    const cx = 20 + i*35;
+    svg += `<circle cx="${cx}" cy="25" r="10" fill="#111"/>`;
+    svg += `<circle cx="${cx}" cy="25" r="7" fill="#444"/>`;
+    svg += `<circle cx="${cx}" cy="135" r="10" fill="#111"/>`;
+    svg += `<circle cx="${cx}" cy="135" r="7" fill="#444"/>`;
+  }
+  svg += `</svg>`;
+  return svg;
+}
 
-    // Маска телефона (соответствует оригиналу)
-    document.getElementById('phone').addEventListener('input', (e) => {
-        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-        if (!x[2]) e.target.value = x[1] ? '+7 (' : '';
-        else e.target.value = '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
-    });
+// ==========================================
+// КОНФИГУРАЦИЯ
+// ==========================================
+const BASE_WIDTHS = { 1: 26.25, 2: 52.5, 3: 78.75, 4: 105 };
+const BASE_HEIGHT = 195;
+const GRID_BASE = 20;
 
-    function initSync() {
-        db.ref('shabashki/active').on('value', snap => {
-            const all = Object.values(snap.val() || {});
-            renderList(all.filter(o => o.ownerID == userID), 'my-orders-list', true);
-        });
-        db.ref('shabashki/archive').on('value', snap => {
-            const all = Object.values(snap.val() || {});
-            renderList(all.filter(o => o.ownerID == userID), 'archive-list', false);
-        });
+const AUTOMATA = [
+  { id: '1P', poles: 1 },
+  { id: '2P', poles: 2 },
+  { id: '3P', poles: 3 },
+  { id: '4P', poles: 4 },
+  { id: '250A', poles: 0, type: 'chnt', width: 120, height: 160 } 
+];
+
+const menu = document.getElementById('menu');
+const workspace = document.getElementById('workspace');
+const itemsLayer = document.getElementById('itemsLayer');
+const hint = document.getElementById('hint');
+const trash = document.getElementById('trash');
+const zoomInfo = document.getElementById('zoomInfo');
+const gridCanvas = document.getElementById('gridCanvas');
+const ctx = gridCanvas.getContext('2d');
+
+const modalOverlay = document.getElementById('modalOverlay');
+const modalInput = document.getElementById('modalInput');
+const btnSave = document.getElementById('btnSave');
+const btnCancel = document.getElementById('btnCancel');
+let currentEditingEl = null;
+
+let zoom = 1, panX = 0, panY = 0;
+const ZOOM_MIN = 0.2, ZOOM_MAX = 3.0;
+
+// ==========================================
+// ПРОВЕРКА ПЕРЕСЕЧЕНИЙ (С ЗАЗОРОМ 1px)
+// ==========================================
+function checkCollision(targetEl, x, y) {
+  const w = parseFloat(targetEl.style.width) || 0;
+  const h = parseFloat(targetEl.style.height) || 0;
+  
+  // Границы тестируемого автомата
+  const r1 = { left: x, top: y, right: x + w, bottom: y + h };
+  
+  const allBreakers = itemsLayer.querySelectorAll('.breaker');
+  for (let el of allBreakers) {
+    if (el === targetEl) continue; 
+    
+    const ex = parseFloat(el.dataset.x) || 0;
+    const ey = parseFloat(el.dataset.y) || 0;
+    const ew = parseFloat(el.style.width) || 0;
+    const eh = parseFloat(el.style.height) || 0;
+    
+    const r2 = { left: ex, top: ey, right: ex + ew, bottom: ey + eh };
+    
+    // ДОБАВЛЯЕМ ЗАЗОР: если они просто касаются (на границе), это не коллизия
+    // Уменьшаем прямоугольники на 1 пиксель для проверки
+    if (r1.left + 1 < r2.right && r1.right - 1 > r2.left &&
+        r1.top + 1 < r2.bottom && r1.bottom - 1 > r2.top) {
+      return true; 
+    }
+  }
+  return false;
+}
+
+// ==========================================
+// РЕНДЕР МЕНЮ
+// ==========================================
+AUTOMATA.forEach(a => {
+  const div = document.createElement('div');
+  div.className = 'menu-item';
+  const img = document.createElement('img');
+  let svg;
+  if (a.type === 'chnt') { svg = generateCHNTSVG(); img.style.width = '60px'; } 
+  else { svg = generateSVG(BASE_WIDTHS[a.poles], a.poles); img.style.width = (BASE_WIDTHS[a.poles] * 0.8) + 'px'; }
+  img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  const label = document.createElement('span'); label.textContent = a.id;
+  div.appendChild(img); div.appendChild(label);
+  div.addEventListener('click', () => spawnBreaker(a));
+  menu.appendChild(div);
+});
+
+// ==========================================
+// СЕТКА
+// ==========================================
+function resizeCanvas() {
+  const rect = workspace.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  gridCanvas.width = rect.width * dpr;
+  gridCanvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawGrid();
+}
+
+function drawGrid() {
+  const rect = workspace.getBoundingClientRect();
+  const w = rect.width; const h = rect.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, w, h);
+  const step = GRID_BASE * zoom;
+  const offsetX = panX % step; const offsetY = panY % step;
+  ctx.strokeStyle = '#d0d0d0'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = offsetX; x <= w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+  for (let y = offsetY; y <= h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+  ctx.stroke();
+}
+
+function updateTransform() {
+  itemsLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  zoomInfo.textContent = `${Math.round(zoom * 100)}%`;
+  drawGrid();
+}
+
+window.addEventListener('resize', resizeCanvas);
+setTimeout(() => { resizeCanvas(); updateTransform(); }, 200);
+
+// ==========================================
+// ЗУМ
+// ==========================================
+let pinchStartDist = 0, pinchStartZoom = 1, pinchStartPanX = 0, pinchStartPanY = 0, pinchCenterX = 0, pinchCenterY = 0;
+
+workspace.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    pinchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    pinchStartZoom = zoom; pinchStartPanX = panX; pinchStartPanY = panY;
+    const rect = workspace.getBoundingClientRect();
+    pinchCenterX = (t1.clientX + t2.clientX) / 2 - rect.left;
+    pinchCenterY = (t1.clientY + t2.clientY) / 2 - rect.top;
+  }
+}, { passive: false });
+
+workspace.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const ratio = dist / pinchStartDist;
+    let newZoom = pinchStartZoom * ratio;
+    newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+    const rect = workspace.getBoundingClientRect();
+    const centerX = (t1.clientX + t2.clientX) / 2 - rect.left;
+    const centerY = (t1.clientY + t2.clientY) / 2 - rect.top;
+    const layerX = (pinchCenterX - pinchStartPanX) / pinchStartZoom;
+    const layerY = (pinchCenterY - pinchStartPanY) / pinchStartZoom;
+    zoom = newZoom;
+    panX = centerX - layerX * zoom; panY = centerY - layerY * zoom;
+    itemsLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    drawGrid();
+    zoomInfo.textContent = `${Math.round(zoom * 100)}%`;
+  }
+}, { passive: false });
+
+// ==========================================
+// ДОБАВЛЕНИЕ АВТОМАТА
+// ==========================================
+let zIndexCounter = 10;
+
+function spawnBreaker(automata) {
+  if (hint) { hint.style.opacity = '0'; setTimeout(() => hint.remove(), 600); }
+  const wrap = document.createElement('div');
+  wrap.className = 'breaker';
+  let w, h, svg;
+  if (automata.type === 'chnt') { w = automata.width; h = automata.height; } 
+  else { w = BASE_WIDTHS[automata.poles]; h = BASE_HEIGHT; }
+  
+  let spawnX = (-panX + workspace.getBoundingClientRect().width / 2) / zoom - w / 2;
+  let spawnY = (-panY + workspace.getBoundingClientRect().height / 2) / zoom - h / 2;
+  spawnX = Math.round(spawnX / GRID_BASE) * GRID_BASE;
+  spawnY = Math.round(spawnY / GRID_BASE) * GRID_BASE;
+  
+  // Если место занято, ищем свободное
+  let attempts = 0;
+  while (checkCollision({style:{width:w+'px', height:h+'px'}, dataset:{}}, spawnX, spawnY) && attempts < 100) {
+    spawnX += GRID_BASE;
+    attempts++;
+  }
+
+  wrap.style.width = w + 'px'; wrap.style.height = h + 'px'; wrap.style.zIndex = ++zIndexCounter;
+  wrap.dataset.type = automata.type || 'std'; wrap.dataset.poles = automata.poles; wrap.dataset.amps = ''; 
+  
+  const img = document.createElement('img');
+  if (automata.type === 'chnt') { svg = generateCHNTSVG(''); } else { svg = generateSVG(BASE_WIDTHS[automata.poles], automata.poles, ''); }
+  img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  wrap.appendChild(img);
+  
+  wrap.dataset.x = spawnX; wrap.dataset.y = spawnY;
+  // Устанавливаем начальную позицию через transform
+  wrap.style.transform = `translate3d(${spawnX}px, ${spawnY}px, 0)`;
+  
+  itemsLayer.appendChild(wrap);
+  makeDraggable(wrap);
+}
+
+function updateBreakerImage(el, amps) {
+  const type = el.dataset.type;
+  const poles = parseInt(el.dataset.poles);
+  let svg;
+  if (type === 'chnt') { svg = generateCHNTSVG(amps); } else { svg = generateSVG(BASE_WIDTHS[poles], poles, amps); }
+  const img = el.querySelector('img');
+  img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  el.dataset.amps = amps;
+}
+
+// ==========================================
+// ПЕРЕТАСКИВАНИЕ (ПЛАВНОЕ)
+// ==========================================
+function makeDraggable(el) {
+  let startX = 0, startY = 0, baseX = 0, baseY = 0;
+  let dragging = false, isOverTrash = false, lastTap = 0, moved = false;
+  let hasCollision = false;
+
+  const onStart = (e) => {
+    if (e.touches && e.touches.length > 1) return;
+    if (e.target !== el && !el.contains(e.target)) return;
+    e.preventDefault(); e.stopPropagation();
+    moved = false;
+    const now = Date.now();
+    if (now - lastTap < 300) { openModal(el); lastTap = 0; return; }
+    lastTap = now;
+    dragging = true;
+    el.classList.add('dragging'); el.style.zIndex = ++zIndexCounter;
+    const point = e.touches ? e.touches[0] : e;
+    startX = point.clientX; startY = point.clientY;
+    baseX = parseFloat(el.dataset.x) || 0;
+    baseY = parseFloat(el.dataset.y) || 0;
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    if (e.touches && e.touches.length > 1) { onEnd(); return; }
+    e.preventDefault(); e.stopPropagation();
+    
+    const point = e.touches ? e.touches[0] : e;
+    const dx = (point.clientX - startX) / zoom;
+    const dy = (point.clientY - startY) / zoom;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+
+    // Двигаем без прилипания к сетке (плавно за пальцем)
+    let newX = baseX + dx;
+    let newY = baseY + dy;
+
+    // Проверка на пересечение во время движения
+    hasCollision = checkCollision(el, newX, newY);
+
+    if (hasCollision) {
+      el.classList.add('collision');
+    } else {
+      el.classList.remove('collision');
     }
 
-    function renderList(orders, containerId, isActive) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = orders.length ? '' : '<div style="text-align:center;padding:50px;color:#444">Пусто</div>';
-        
-        orders.sort((a,b) => b.timestamp - a.timestamp).forEach(o => {
-            const isBusy = o.status === 'busy';
-            let rejectionsHtml = o.rejections ? `<div class="rej-box">${Object.values(o.rejections).map(r => `• ${r.text}`).join('<br>')}</div>` : '';
+    el.dataset.x = newX;
+    el.dataset.y = newY;
+    // ИСПОЛЬЗУЕМ TRANSFORM ДЛЯ ПЛАВНОСТИ
+    el.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
 
-            const card = document.createElement('div');
-            card.className = 'card';
-            if(!isActive) card.style.opacity = '0.6';
-
-            card.innerHTML = `
-                <div class="card-header"><span class="tag-city">${o.city}</span><span>${isActive ? o.date : (o.closedAt || 'Ок')}</span></div>
-                <span class="badge-status ${isBusy ? 'bg-busy' : 'bg-free'}">${!isActive ? '✅ ГОТОВО' : (isBusy ? '⏳ МАСТЕР В ПУТИ' : '🔘 ПОИСК')}</span>
-                <h3 style="margin:5px 0">${o.task}</h3>
-                <div style="font-size:12px;color:#888">📍 ${o.addr}</div>
-                ${rejectionsHtml}
-                <div style="display:flex; gap:8px; margin-top:10px;">
-                    ${isActive && !isBusy ? `<button class="btn btn-cancel" onclick="cancelOrder('${o.id}')">ОТМЕНА</button>` : ''}
-                    <button class="btn btn-report" onclick="sendComplaint('${o.id}', '${o.task}', '${o.workerID || '---'}')">ЖАЛОБА</button>
-                </div>
-            `;
-            container.appendChild(card);
-        });
+    const trashRect = trash.getBoundingClientRect();
+    const inTrash = point.clientX >= trashRect.left - 15 && point.clientX <= trashRect.right + 15 && point.clientY >= trashRect.top - 15 && point.clientY <= trashRect.bottom + 15;
+    
+    if (inTrash !== isOverTrash) {
+      isOverTrash = inTrash;
+      el.classList.toggle('over-trash', inTrash);
+      trash.classList.toggle('active', inTrash);
     }
+  };
 
-    function cancelOrder(id) {
-        if(confirm("Удалить вашу заявку?")) db.ref(`shabashki/active/${id}`).remove();
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false;
+    el.classList.remove('dragging');
+    el.classList.remove('collision');
+    trash.classList.remove('active');
+
+    if (isOverTrash) { 
+      el.remove(); 
+    } else if (hasCollision) {
+      // Если было пересечение — откат на исходную
+      el.dataset.x = baseX;
+      el.dataset.y = baseY;
+      el.style.transform = `translate3d(${baseX}px, ${baseY}px, 0)`;
+    } else {
+      // Если всё ок — прилипаем к сетке (только при отпускании)
+      let x = Math.round((parseFloat(el.dataset.x) || 0) / GRID_BASE) * GRID_BASE;
+      let y = Math.round((parseFloat(el.dataset.y) || 0) / GRID_BASE) * GRID_BASE;
+      
+      // Попытка «примагнититься» к соседям (чтобы не было зазоров)
+      // (Опционально: можно усложнить, но пока просто прилипание к сетке)
+      
+      el.dataset.x = x; el.dataset.y = y;
+      el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     }
+    isOverTrash = false;
+    hasCollision = false;
+    el.classList.remove('over-trash');
+  };
 
-    function sendComplaint(id, task, worker) {
-        const message = `⚠️ ЖАЛОБА (ID: ${userID})\nЗаказ: ${task}\nМастер: ${worker}`;
-        window.open(`https://wa.me/79640040355?text=${encodeURIComponent(message)}`, '_blank');
-    }
+  el.addEventListener('touchstart', onStart, { passive: false });
+  el.addEventListener('touchmove', onMove, { passive: false });
+  el.addEventListener('touchend', onEnd);
+  el.addEventListener('touchcancel', onEnd);
+  el.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+}
 
-    function saveOrder() {
-        const task = document.getElementById('task').value;
-        const addr = document.getElementById('address').value;
-        const phone = document.getElementById('phone').value;
-        const city = document.getElementById('city-input').value;
+// ==========================================
+// МОДАЛКА
+// ==========================================
+function openModal(el) {
+  currentEditingEl = el;
+  modalInput.value = el.dataset.amps || '';
+  modalOverlay.classList.add('show');
+  modalInput.focus();
+}
 
-        if(!task || !addr || phone.length < 18) return alert("Заполните поля!");
+btnCancel.addEventListener('click', () => { modalOverlay.classList.remove('show'); currentEditingEl = null; });
+btnSave.addEventListener('click', () => {
+  if (currentEditingEl) { updateBreakerImage(currentEditingEl, modalInput.value.trim()); }
+  modalOverlay.classList.remove('show'); currentEditingEl = null;
+});
+modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) { modalOverlay.classList.remove('show'); currentEditingEl = null; } });
+modalInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { btnSave.click(); } });
 
-        const id = Date.now().toString();
-        const data = {
-            id, task, addr, phone, city, ownerID: userID, status: 'free',
-            date: new Date().toLocaleString('ru-RU', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}),
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        };
-
-        db.ref('shabashki/active/' + id).set(data).then(() => {
-            // Уведомление для приложения мастеров (соответствует оригиналу)
-            db.ref('push_queue').push({ 
-                title: "НОВАЯ ШАБАШКА! 🔥", 
-                body: city + ": " + task,
-                timestamp: firebase.database.ServerValue.TIMESTAMP 
-            });
-            alert("Заявка создана!");
-            resetForm();
-            changeView('list', document.querySelectorAll('nav button')[1]);
-        });
-    }
-
-    function changeView(view, btn) {
-        ['view-add', 'view-list', 'view-archive'].forEach(v => document.getElementById(v).classList.add('hidden'));
-        document.getElementById('view-' + view).classList.remove('hidden');
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-    }
-
-    function resetForm() {
-        document.getElementById('task').value = '';
-        document.getElementById('address').value = '';
-        document.getElementById('phone').value = '';
-    }
-
-    window.onload = initSync;
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 </script>
 </body>
 </html>
