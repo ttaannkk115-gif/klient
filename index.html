@@ -623,8 +623,8 @@ const AUTOMATA = [
   { id: 'Шина', poles: 0, type: 'bus', width: 150, height: 60 },
   { id: 'Клеммник', poles: 0, type: 'terminal', width: 20, height: 80 },
   // НОВЫЕ РЕЛЕ
-  { id: 'РВФ-02', poles: 0, type: 'rvf', width: 52.5, height: 195 },
-  { id: 'РНПП', poles: 0, type: 'rnpp', width: 105, height: 195 }
+  { id: 'РВФ-02', type: 'rvf', width: 26.25, height: 130 }, // Как 1 модуль
+  { id: 'РНПП', type: 'rnpp', width: 52.5, height: 130 }   // Как 2 модуля
 ];
 
 const menu = document.getElementById('menu');
@@ -791,8 +791,8 @@ function spawnBreaker(automata) {
   else if (automata.type === 'tdm') { w = 90; h = 195; }
   else if (automata.type === 'bus') { w = 150; h = 60; }
   else if (automata.type === 'terminal') { w = 20; h = 80; }
-  else if (automata.type === 'rvf') { w = 52.5; h = 195; }
-  else if (automata.type === 'rnpp') { w = 105; h = 195; }
+  else if (automata.type === 'rvf') { w = 26.25; h = 130; }
+  else if (automata.type === 'rnpp') { w = 52.5; h = 130; }
   else { w = BASE_WIDTHS[automata.poles]; h = BASE_HEIGHT; }
   
   let spawnX = (-panX + workspace.getBoundingClientRect().width / 2) / zoom - w / 2;
