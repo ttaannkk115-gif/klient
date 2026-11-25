@@ -301,33 +301,61 @@ function generateSVG(totalWidth, poles, amps = '') {
 // ==========================================
 
 // ==========================================
-// ФУНКЦИЯ ОТРИСОВКИ КОЛОДКИ TDM (Распределительный блок)
+// ОБНОВЛЕННАЯ ФУНКЦИЯ ОТРИСОВКИ БЛОКА IEK РБД-125А
 // ==========================================
 function generateTDMBlockSVG() {
-  const w = 120, h = 80;
+  // Пропорции подобраны под реальный блок (он выше и уже, чем стандартный автомат)
+  const w = 60, h = 130; 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
   
-  // Основание (серое)
-  svg += `<rect x="10" y="10" width="100" height="60" rx="4" fill="#e0e0e0" stroke="#999" stroke-width="1"/>`;
+  // 1. Белое основание (крепление на DIN-рейку)
+  // Верхнее ушко с прорезью
+  svg += `<path d="M 20 5 L 40 5 L 45 15 L 45 25 L 15 25 L 15 15 Z" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>`;
+  svg += `<rect x="25" y="5" width="10" height="8" rx="4" fill="#fff" stroke="#999" stroke-width="1"/>`; // прорезь
+  // Основной корпус сзади
+  svg += `<rect x="12" y="25" width="36" height="75" rx="2" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>`;
+  // Нижнее крепление
+  svg += `<path d="M 12 100 L 48 100 L 48 115 L 40 125 L 20 125 L 12 115 Z" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>`;
+  svg += `<rect x="23" y="110" width="14" height="10" rx="5" fill="#fff" stroke="#999" stroke-width="1"/>`; // нижняя прорезь
+
+  // 2. Синяя прозрачная крышка
+  // Основной прямоугольник
+  svg += `<rect x="15" y="25" width="30" height="75" rx="2" fill="#0077cc" opacity="0.85" stroke="#005599" stroke-width="1"/>`;
   
-  // Синяя прозрачная крышка
-  svg += `<path d="M 15 10 L 105 10 L 115 30 L 5 30 Z" fill="#0055aa" opacity="0.8" stroke="#004488" stroke-width="1"/>`;
+  // Блик на крышке (для эффекта прозрачного пластика)
+  svg += `<path d="M 16 26 L 44 26 L 42 30 L 18 30 Z" fill="#ffffff" opacity="0.3"/>`;
   
-  // Отверстия сверху (имитация)
-  for(let i=0; i<3; i++) {
-    for(let j=0; j<3; j++) {
-      svg += `<circle cx="${30 + i*25}" cy="${15 + j*5}" r="4" fill="#003366" opacity="0.6"/>`;
-    }
+  // Горизонтальные разделительные полосы на крышке
+  svg += `<line x1="15" y1="60" x2="45" y2="60" stroke="#005599" stroke-width="1.5"/>`;
+  svg += `<line x1="15" y1="80" x2="45" y2="80" stroke="#005599" stroke-width="1.5"/>`;
+
+  // 3. Верхняя часть (Ввод)
+  // Большой болт (в центре)
+  svg += `<circle cx="24" cy="42" r="8" fill="#333" stroke="#666" stroke-width="1"/>`;
+  svg += `<polygon points="24,36 27,42 24,48 21,42" fill="#888"/>`; // грань болта
+  // Малый болт (справа)
+  svg += `<circle cx="38" cy="40" r="4" fill="#333" stroke="#666" stroke-width="1"/>`;
+  svg += `<polygon points="38,37 40,40 38,43 36,40" fill="#888"/>`;
+
+  // 4. Нижняя часть (6 клемм)
+  // Верхний ряд (3 болта)
+  for (let i = 0; i < 3; i++) {
+    const cx = 22 + i * 8;
+    const cy = 70;
+    svg += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#333" stroke="#666" stroke-width="1"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="1.5" fill="#888"/>`; // внутренний шестигранник
+  }
+  // Нижний ряд (3 болта)
+  for (let i = 0; i < 3; i++) {
+    const cx = 22 + i * 8;
+    const cy = 90;
+    svg += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#333" stroke="#666" stroke-width="1"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="1.5" fill="#888"/>`;
   }
 
-  // Отверстия для проводов снизу
-  for(let i=0; i<4; i++) {
-    svg += `<circle cx="${25 + i*20}" cy="60" r="6" fill="#444" stroke="#222" stroke-width="1"/>`;
-    svg += `<circle cx="${25 + i*20}" cy="60" r="3" fill="#888"/>`;
-  }
-  
-  // Текст TDM
-  svg += `<text x="60" y="45" font-family="Arial" font-size="8" font-weight="bold" fill="#fff" text-anchor="middle" opacity="0.8">TDM</text>`;
+  // 5. Тексты на крышке
+  svg += `<text x="24" y="55" font-family="Arial" font-size="3" font-weight="bold" fill="#fff">IEK</text>`;
+  svg += `<text x="24" y="58" font-family="Arial" font-size="2.5" fill="#fff">РБД-125А</text>`;
   
   svg += `</svg>`;
   return svg;
@@ -503,9 +531,12 @@ const AUTOMATA = [
   { id: '3P', poles: 3 },
   { id: '4P', poles: 4 },
   { id: '250A', poles: 0, type: 'chnt', width: 120, height: 160 },
-  { id: 'Реле', poles: 0, type: 'relay', width: 52.5, height: 195 }, // Если добавляли ранее
-  // НОВЫЕ ДЕТАЛИ:
-  { id: 'Колодка', poles: 0, type: 'tdm', width: 120, height: 80 },
+  { id: 'Реле', poles: 0, type: 'relay', width: 52.5, height: 195 }, 
+  
+  // БЫЛО: { id: 'Колодка', poles: 0, type: 'tdm', width: 60, height: 130 },
+  // СТАЛО (увеличили в 1.5 раза):
+  { id: 'Колодка', poles: 0, type: 'tdm', width: 90, height: 195 }, 
+  
   { id: 'Шина', poles: 0, type: 'bus', width: 150, height: 60 },
   { id: 'Клеммник', poles: 0, type: 'terminal', width: 20, height: 80 }
 ];
