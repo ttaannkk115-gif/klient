@@ -519,6 +519,93 @@ function generateCHNTSVG(amps = '') {
 }
 
 // ==========================================
+// РЕЛЕ РВФ-02 (ИСПРАВЛЕННЫЙ)
+// ==========================================
+function generateRVFSVG() {
+  const w = 52.5, h = 195;
+  let svg = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "' viewBox='0 0 " + w + " " + h + "'>";
+  svg += "<rect x='2' y='5' width='48.5' height='185' fill='#f4f4f4' stroke='#bbb'/>";
+  
+  // Верхние клеммы (Зеленые)
+  svg += "<rect x='2' y='5' width='48.5' height='20' fill='#e0e0e0' stroke='#bbb'/>";
+  svg += "<rect x='8' y='10' width='12' height='10' fill='#2e8b57'/>";
+  svg += "<rect x='32' y='10' width='12' height='10' fill='#2e8b57'/>";
+  svg += "<text x='14' y='8' font-family='Arial' font-size='5' fill='#555' text-anchor='middle'>A3</text>";
+  svg += "<text x='38' y='8' font-family='Arial' font-size='5' fill='#555' text-anchor='middle'>A1</text>";
+  
+  // Второй ряд клемм
+  svg += "<rect x='2' y='28' width='48.5' height='18' fill='#e0e0e0' stroke='#bbb'/>";
+  svg += "<circle cx='10' cy='37' r='3' fill='#999'/>";
+  svg += "<circle cx='26' cy='37' r='3' fill='#999'/>";
+  svg += "<circle cx='42' cy='37' r='3' fill='#999'/>";
+
+  // Три крутилки с прорезями
+  const knobY = [65, 100, 135];
+  knobY.forEach(y => {
+    svg += "<circle cx='26' cy='" + y + "' r='9' fill='#0055aa' stroke='#333'/>";
+    svg += "<line x1='20' y1='" + (y-5) + "' x2='32' y2='" + (y+5) + "' stroke='#003366' stroke-width='2'/>";
+  });
+
+  // Текст НАЗВАНИЕ
+  svg += "<text x='26' y='120' font-family='Arial' font-size='6' font-weight='bold' fill='#333' text-anchor='middle'>РВФ-02</text>";
+
+  // Нижние клеммы
+  svg += "<rect x='2' y='155' width='48.5' height='15' fill='#e0e0e0' stroke='#bbb'/>";
+  svg += "<rect x='2' y='175' width='48.5' height='15' fill='#e0e0e0' stroke='#bbb'/>";
+  svg += "<circle cx='10' cy='182' r='3' fill='#999'/>";
+  svg += "<circle cx='26' cy='182' r='3' fill='#999'/>";
+  svg += "<circle cx='42' cy='182' r='3' fill='#999'/>";
+  svg += "<text x='10' y='174' font-family='Arial' font-size='5' fill='#555' text-anchor='middle'>B3</text>";
+  svg += "<text x='26' y='174' font-family='Arial' font-size='5' fill='#555' text-anchor='middle'>B2</text>";
+  svg += "<text x='42' y='174' font-family='Arial' font-size='5' fill='#555' text-anchor='middle'>B1</text>";
+
+  svg += "</svg>";
+  return svg;
+}
+// ==========================================
+// РЕЛЕ РНПП-311 (ИСПРАВЛЕННЫЙ)
+// ==========================================
+function generateRNPPSVG() {
+  const w = 105, h = 195;
+  let svg = "<svg xmlns='http://www.w3.org/2000/svg' width='" + w + "' height='" + h + "' viewBox='0 0 " + w + " " + h + "'>";
+  svg += "<rect x='2' y='5' width='101' height='185' fill='#f4f4f4' stroke='#bbb'/>";
+  
+  // Верхняя панель с клеммами
+  svg += "<rect x='2' y='5' width='101' height='20' fill='#e0e0e0' stroke='#bbb'/>";
+  for(let i=0; i<6; i++) {
+    svg += "<rect x='" + (10 + i*14) + "' y='10' width='8' height='10' fill='#333'/>"; 
+    svg += "<text x='" + (14 + i*14) + "' y='8' font-family='Arial' font-size='4' fill='#555' text-anchor='middle'>" + (7+i) + "</text>";
+  }
+
+  // Синяя полоса
+  svg += "<rect x='5' y='30' width='95' height='15' fill='#0055aa'/>";
+  svg += "<text x='52' y='40' font-family='Arial' font-size='6' fill='#fff' text-anchor='middle'>РНПП-311М</text>";
+  
+  // Крутилки с крестом
+  const knobY = [65, 105, 145];
+  knobY.forEach(y => {
+    svg += "<circle cx='25' cy='" + y + "' r='9' fill='#0055aa' stroke='#333'/>";
+    svg += "<rect x='21' y='" + (y-6) + "' width='8' height='12' fill='#003366'/>";
+    svg += "<rect x='19' y='" + (y-2) + "' width='12' height='4' fill='#003366'/>";
+  });
+
+  // Индикаторы (зеленые)
+  svg += "<rect x='70' y='55' width='6' height='6' fill='#0c0'/>";
+  svg += "<rect x='70' y='70' width='6' height='6' fill='#0c0'/>";
+  svg += "<rect x='70' y='85' width='6' height='6' fill='#0c0'/>";
+
+  // Нижняя панель с клеммами
+  svg += "<rect x='2' y='155' width='101' height='35' fill='#e0e0e0' stroke='#bbb'/>";
+  for(let i=0; i<6; i++) {
+    svg += "<circle cx='" + (14 + i*15) + "' cy='175' r='5' fill='#888' stroke='#555'/>";
+    svg += "<text x='" + (14 + i*15) + "' y='190' font-family='Arial' font-size='4' fill='#333' text-anchor='middle'>" + (i+1) + "</text>";
+  }
+
+  svg += "</svg>";
+  return svg;
+}
+
+// ==========================================
 // КОНФИГУРАЦИЯ
 // ==========================================
 const BASE_WIDTHS = { 1: 27.25, 2: 52.5, 3: 78.75, 4: 105 };
@@ -532,13 +619,12 @@ const AUTOMATA = [
   { id: '4P', poles: 4 },
   { id: '250A', poles: 0, type: 'chnt', width: 120, height: 160 },
   { id: 'Реле', poles: 0, type: 'relay', width: 52.5, height: 195 }, 
-  
-  // БЫЛО: { id: 'Колодка', poles: 0, type: 'tdm', width: 60, height: 130 },
-  // СТАЛО (увеличили в 1.5 раза):
   { id: 'Колодка', poles: 0, type: 'tdm', width: 90, height: 195 }, 
-  
   { id: 'Шина', poles: 0, type: 'bus', width: 150, height: 60 },
-  { id: 'Клеммник', poles: 0, type: 'terminal', width: 20, height: 80 }
+  { id: 'Клеммник', poles: 0, type: 'terminal', width: 20, height: 80 },
+  // НОВЫЕ РЕЛЕ
+  { id: 'РВФ-02', poles: 0, type: 'rvf', width: 52.5, height: 195 },
+  { id: 'РНПП', poles: 0, type: 'rnpp', width: 105, height: 195 }
 ];
 
 const menu = document.getElementById('menu');
@@ -597,13 +683,18 @@ AUTOMATA.forEach(a => {
   const div = document.createElement('div');
   div.className = 'menu-item';
   const img = document.createElement('img');
-  let svg;
+  let svg = '';
+  
+  // СТРОГИЙ ПОРЯДОК ПРОВЕРОК
   if (a.type === 'chnt') { svg = generateCHNTSVG(); img.style.width = '60px'; } 
   else if (a.type === 'relay') { svg = generateRelaySVG(); img.style.width = '40px'; }
-  else if (a.type === 'tdm') { svg = generateTDMBlockSVG(); img.style.width = '60px'; }
+  else if (a.type === 'tdm') { svg = generateTDMBlockSVG(); img.style.width = '40px'; }
   else if (a.type === 'bus') { svg = generateBusbarSVG(); img.style.width = '60px'; }
   else if (a.type === 'terminal') { svg = generateTerminalSVG(); img.style.width = '20px'; }
+  else if (a.type === 'rvf') { svg = generateRVFSVG(); img.style.width = '40px'; }
+  else if (a.type === 'rnpp') { svg = generateRNPPSVG(); img.style.width = '60px'; }
   else { svg = generateSVG(BASE_WIDTHS[a.poles], a.poles); img.style.width = (BASE_WIDTHS[a.poles] * 0.8) + 'px'; }
+  
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   const label = document.createElement('span'); label.textContent = a.id;
   div.appendChild(img); div.appendChild(label);
@@ -692,14 +783,16 @@ function spawnBreaker(automata) {
   if (hint) { hint.style.opacity = '0'; setTimeout(() => hint.remove(), 600); }
   const wrap = document.createElement('div');
   wrap.className = 'breaker';
-  let w, h, svg;
+  let w, h, svg = '';
   
-  // Определяем размеры
-  if (automata.type === 'chnt') { w = automata.width; h = automata.height; } 
-  else if (automata.type === 'relay') { w = automata.width; h = automata.height; }
-  else if (automata.type === 'tdm') { w = automata.width; h = automata.height; }
-  else if (automata.type === 'bus') { w = automata.width; h = automata.height; }
-  else if (automata.type === 'terminal') { w = automata.width; h = automata.height; }
+  // УСТАНАВЛИВАЕМ РАЗМЕРЫ
+  if (automata.type === 'chnt') { w = 120; h = 160; } 
+  else if (automata.type === 'relay') { w = 52.5; h = 195; }
+  else if (automata.type === 'tdm') { w = 90; h = 195; }
+  else if (automata.type === 'bus') { w = 150; h = 60; }
+  else if (automata.type === 'terminal') { w = 20; h = 80; }
+  else if (automata.type === 'rvf') { w = 52.5; h = 195; }
+  else if (automata.type === 'rnpp') { w = 105; h = 195; }
   else { w = BASE_WIDTHS[automata.poles]; h = BASE_HEIGHT; }
   
   let spawnX = (-panX + workspace.getBoundingClientRect().width / 2) / zoom - w / 2;
@@ -714,17 +807,19 @@ function spawnBreaker(automata) {
   }
 
   wrap.style.width = w + 'px'; wrap.style.height = h + 'px'; wrap.style.zIndex = ++zIndexCounter;
-  wrap.dataset.type = automata.type || 'std'; wrap.dataset.poles = automata.poles; wrap.dataset.amps = ''; 
+  wrap.dataset.type = automata.type || 'std'; wrap.dataset.poles = automata.poles || 0; wrap.dataset.amps = ''; 
   
-  // Рисуем нужный SVG
-  const img = document.createElement('img');
+  // РИСУЕМ КАРТИНКУ
   if (automata.type === 'chnt') { svg = generateCHNTSVG(''); } 
   else if (automata.type === 'relay') { svg = generateRelaySVG(''); }
   else if (automata.type === 'tdm') { svg = generateTDMBlockSVG(); }
   else if (automata.type === 'bus') { svg = generateBusbarSVG(); }
   else if (automata.type === 'terminal') { svg = generateTerminalSVG(); }
+  else if (automata.type === 'rvf') { svg = generateRVFSVG(); }
+  else if (automata.type === 'rnpp') { svg = generateRNPPSVG(); }
   else { svg = generateSVG(BASE_WIDTHS[automata.poles], automata.poles, ''); }
   
+  const img = document.createElement('img');
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   wrap.appendChild(img);
   
@@ -738,14 +833,15 @@ function spawnBreaker(automata) {
 function updateBreakerImage(el, amps) {
   const type = el.dataset.type;
   const poles = parseInt(el.dataset.poles);
-  let svg;
+  let svg = '';
   
-  // Эти детали не принимают значения, но функция нужна для совместимости
   if (type === 'chnt') { svg = generateCHNTSVG(amps); } 
   else if (type === 'relay') { svg = generateRelaySVG(amps); }
   else if (type === 'tdm') { svg = generateTDMBlockSVG(); }
   else if (type === 'bus') { svg = generateBusbarSVG(); }
   else if (type === 'terminal') { svg = generateTerminalSVG(); }
+  else if (type === 'rvf') { svg = generateRVFSVG(); }
+  else if (type === 'rnpp') { svg = generateRNPPSVG(); }
   else { svg = generateSVG(BASE_WIDTHS[poles], poles, amps); }
   
   const img = el.querySelector('img');
