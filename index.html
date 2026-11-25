@@ -299,6 +299,98 @@ function generateSVG(totalWidth, poles, amps = '') {
 // ==========================================
 // ФУНКЦИЯ ОТРИСОВКИ ОТСЕКАТЕЛЯ (РЕЛЕ PH-263t)
 // ==========================================
+
+// ==========================================
+// ФУНКЦИЯ ОТРИСОВКИ КОЛОДКИ TDM (Распределительный блок)
+// ==========================================
+function generateTDMBlockSVG() {
+  const w = 120, h = 80;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  
+  // Основание (серое)
+  svg += `<rect x="10" y="10" width="100" height="60" rx="4" fill="#e0e0e0" stroke="#999" stroke-width="1"/>`;
+  
+  // Синяя прозрачная крышка
+  svg += `<path d="M 15 10 L 105 10 L 115 30 L 5 30 Z" fill="#0055aa" opacity="0.8" stroke="#004488" stroke-width="1"/>`;
+  
+  // Отверстия сверху (имитация)
+  for(let i=0; i<3; i++) {
+    for(let j=0; j<3; j++) {
+      svg += `<circle cx="${30 + i*25}" cy="${15 + j*5}" r="4" fill="#003366" opacity="0.6"/>`;
+    }
+  }
+
+  // Отверстия для проводов снизу
+  for(let i=0; i<4; i++) {
+    svg += `<circle cx="${25 + i*20}" cy="60" r="6" fill="#444" stroke="#222" stroke-width="1"/>`;
+    svg += `<circle cx="${25 + i*20}" cy="60" r="3" fill="#888"/>`;
+  }
+  
+  // Текст TDM
+  svg += `<text x="60" y="45" font-family="Arial" font-size="8" font-weight="bold" fill="#fff" text-anchor="middle" opacity="0.8">TDM</text>`;
+  
+  svg += `</svg>`;
+  return svg;
+}
+
+// ==========================================
+// ФУНКЦИЯ ОТРИСОВКИ ШИНЫ (DIN-рейка)
+// ==========================================
+function generateBusbarSVG() {
+  const w = 150, h = 60;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  
+  // Серый корпус
+  svg += `<rect x="5" y="5" width="140" height="50" rx="2" fill="#ddd" stroke="#999" stroke-width="1"/>`;
+  
+  // Синие полосы
+  svg += `<rect x="10" y="10" width="130" height="10" fill="#0055aa" opacity="0.8"/>`;
+  svg += `<rect x="10" y="25" width="130" height="10" fill="#0055aa" opacity="0.8"/>`;
+  svg += `<rect x="10" y="40" width="130" height="10" fill="#0055aa" opacity="0.8"/>`;
+  
+  // Винты на синих полосах
+  for(let i=0; i<12; i++) {
+    const cx = 15 + i*11;
+    svg += `<circle cx="${cx}" cy="15" r="3" fill="#ccc" stroke="#666" stroke-width="0.5"/>`;
+    svg += `<line x1="${cx-2}" y1="15" x2="${cx+2}" y2="15" stroke="#666" stroke-width="0.5"/>`;
+    
+    svg += `<circle cx="${cx}" cy="30" r="3" fill="#ccc" stroke="#666" stroke-width="0.5"/>`;
+    svg += `<line x1="${cx-2}" y1="30" x2="${cx+2}" y2="30" stroke="#666" stroke-width="0.5"/>`;
+    
+    svg += `<circle cx="${cx}" cy="45" r="3" fill="#ccc" stroke="#666" stroke-width="0.5"/>`;
+    svg += `<line x1="${cx-2}" y1="45" x2="${cx+2}" y2="45" stroke="#666" stroke-width="0.5"/>`;
+  }
+  
+  svg += `</svg>`;
+  return svg;
+}
+
+// ==========================================
+// ФУНКЦИЯ ОТРИСОВКИ КЛЕММНИКА (Синий проходной)
+// ==========================================
+function generateTerminalSVG() {
+  const w = 20, h = 80;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  
+  // Синий корпус
+  svg += `<rect x="2" y="5" width="16" height="70" rx="2" fill="#0088cc" stroke="#005580" stroke-width="1"/>`;
+  
+  // Верхний винт
+  svg += `<circle cx="10" cy="15" r="5" fill="#aaa" stroke="#555" stroke-width="1"/>`;
+  svg += `<line x1="7" y1="15" x2="13" y2="15" stroke="#555" stroke-width="1"/>`;
+  
+  // Нижний винт
+  svg += `<circle cx="10" cy="65" r="5" fill="#aaa" stroke="#555" stroke-width="1"/>`;
+  svg += `<line x1="7" y1="65" x2="13" y2="65" stroke="#555" stroke-width="1"/>`;
+  
+  // Отверстия для проводов (сбоку)
+  svg += `<rect x="15" y="10" width="5" height="10" fill="#333"/>`;
+  svg += `<rect x="15" y="60" width="5" height="10" fill="#333"/>`;
+  
+  svg += `</svg>`;
+  return svg;
+}
+
 function generateRelaySVG(amps = '') {
   const w = 52.5, h = 130;
   const padding = 2;
@@ -411,7 +503,11 @@ const AUTOMATA = [
   { id: '3P', poles: 3 },
   { id: '4P', poles: 4 },
   { id: '250A', poles: 0, type: 'chnt', width: 120, height: 160 },
-  { id: 'Реле', poles: 0, type: 'relay', width: 52.5, height: 195 } // <--- ДОБАВИТЬ ЭТУ СТРОКУ
+  { id: 'Реле', poles: 0, type: 'relay', width: 52.5, height: 195 }, // Если добавляли ранее
+  // НОВЫЕ ДЕТАЛИ:
+  { id: 'Колодка', poles: 0, type: 'tdm', width: 120, height: 80 },
+  { id: 'Шина', poles: 0, type: 'bus', width: 150, height: 60 },
+  { id: 'Клеммник', poles: 0, type: 'terminal', width: 20, height: 80 }
 ];
 
 const menu = document.getElementById('menu');
@@ -472,7 +568,10 @@ AUTOMATA.forEach(a => {
   const img = document.createElement('img');
   let svg;
   if (a.type === 'chnt') { svg = generateCHNTSVG(); img.style.width = '60px'; } 
-  else if (a.type === 'relay') { svg = generateRelaySVG(); img.style.width = '40px'; } // <--- ДОБАВИТЬ
+  else if (a.type === 'relay') { svg = generateRelaySVG(); img.style.width = '40px'; }
+  else if (a.type === 'tdm') { svg = generateTDMBlockSVG(); img.style.width = '60px'; }
+  else if (a.type === 'bus') { svg = generateBusbarSVG(); img.style.width = '60px'; }
+  else if (a.type === 'terminal') { svg = generateTerminalSVG(); img.style.width = '20px'; }
   else { svg = generateSVG(BASE_WIDTHS[a.poles], a.poles); img.style.width = (BASE_WIDTHS[a.poles] * 0.8) + 'px'; }
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   const label = document.createElement('span'); label.textContent = a.id;
@@ -564,8 +663,12 @@ function spawnBreaker(automata) {
   wrap.className = 'breaker';
   let w, h, svg;
   
+  // Определяем размеры
   if (automata.type === 'chnt') { w = automata.width; h = automata.height; } 
-  else if (automata.type === 'relay') { w = automata.width; h = automata.height; } // <--- ДЛЯ РЕЛЕ
+  else if (automata.type === 'relay') { w = automata.width; h = automata.height; }
+  else if (automata.type === 'tdm') { w = automata.width; h = automata.height; }
+  else if (automata.type === 'bus') { w = automata.width; h = automata.height; }
+  else if (automata.type === 'terminal') { w = automata.width; h = automata.height; }
   else { w = BASE_WIDTHS[automata.poles]; h = BASE_HEIGHT; }
   
   let spawnX = (-panX + workspace.getBoundingClientRect().width / 2) / zoom - w / 2;
@@ -582,9 +685,13 @@ function spawnBreaker(automata) {
   wrap.style.width = w + 'px'; wrap.style.height = h + 'px'; wrap.style.zIndex = ++zIndexCounter;
   wrap.dataset.type = automata.type || 'std'; wrap.dataset.poles = automata.poles; wrap.dataset.amps = ''; 
   
+  // Рисуем нужный SVG
   const img = document.createElement('img');
   if (automata.type === 'chnt') { svg = generateCHNTSVG(''); } 
-  else if (automata.type === 'relay') { svg = generateRelaySVG(''); } // <--- ДЛЯ РЕЛЕ
+  else if (automata.type === 'relay') { svg = generateRelaySVG(''); }
+  else if (automata.type === 'tdm') { svg = generateTDMBlockSVG(); }
+  else if (automata.type === 'bus') { svg = generateBusbarSVG(); }
+  else if (automata.type === 'terminal') { svg = generateTerminalSVG(); }
   else { svg = generateSVG(BASE_WIDTHS[automata.poles], automata.poles, ''); }
   
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
@@ -601,9 +708,15 @@ function updateBreakerImage(el, amps) {
   const type = el.dataset.type;
   const poles = parseInt(el.dataset.poles);
   let svg;
+  
+  // Эти детали не принимают значения, но функция нужна для совместимости
   if (type === 'chnt') { svg = generateCHNTSVG(amps); } 
-  else if (type === 'relay') { svg = generateRelaySVG(amps); } // <--- ДЛЯ РЕЛЕ
+  else if (type === 'relay') { svg = generateRelaySVG(amps); }
+  else if (type === 'tdm') { svg = generateTDMBlockSVG(); }
+  else if (type === 'bus') { svg = generateBusbarSVG(); }
+  else if (type === 'terminal') { svg = generateTerminalSVG(); }
   else { svg = generateSVG(BASE_WIDTHS[poles], poles, amps); }
+  
   const img = el.querySelector('img');
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   el.dataset.amps = amps;
