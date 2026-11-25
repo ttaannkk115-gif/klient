@@ -296,6 +296,72 @@ function generateSVG(totalWidth, poles, amps = '') {
   return svg;
 }
 
+// ==========================================
+// ФУНКЦИЯ ОТРИСОВКИ ОТСЕКАТЕЛЯ (РЕЛЕ PH-263t)
+// ==========================================
+function generateRelaySVG(amps = '') {
+  const w = 52.5, h = 130;
+  const padding = 2;
+  const displayVal = amps ? amps : '220';
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  
+  // Корпус
+  svg += `<rect x="${padding}" y="5" width="${w-padding*2}" height="${h-10}" fill="#f0f0f0" stroke="#999" stroke-width="1"/>`;
+  
+  // Верхняя часть (клеммы L и N)
+  svg += `<rect x="${padding}" y="5" width="${w-padding*2}" height="25" fill="#e8e8e8" stroke="#999" stroke-width="1"/>`;
+  svg += `<text x="12" y="22" font-family="Arial" font-size="6" font-weight="bold" fill="#555">L</text>`;
+  svg += `<text x="38" y="22" font-family="Arial" font-size="6" font-weight="bold" fill="#555">N</text>`;
+  svg += `<path d="M 22 14 L 30 14 L 26 20 Z" fill="#666"/>`;
+  svg += `<circle cx="12" cy="12" r="4" fill="#777" stroke="#444" stroke-width="1"/>`;
+  svg += `<circle cx="38" cy="12" r="4" fill="#777" stroke="#444" stroke-width="1"/>`;
+
+  // Синяя полоса и логотип
+  svg += `<rect x="${padding}" y="32" width="${w-padding*2}" height="3" fill="#0066cc"/>`;
+  svg += `<circle cx="9" cy="42" r="2.5" fill="#0066cc"/>`;
+  svg += `<text x="16" y="44" font-family="Arial" font-size="5" font-weight="bold" fill="#333">PH-263t</text>`;
+
+  // Дисплей
+  svg += `<rect x="6" y="48" width="26" height="20" fill="#222" stroke="#555" stroke-width="1" rx="2"/>`;
+  svg += `<text x="19" y="63" font-family="Courier, monospace" font-size="12" font-weight="bold" fill="#ff3333" text-anchor="middle" textLength="22" lengthAdjust="spacingAndGlyphs">${displayVal}</text>`;
+  
+  // Индикаторы
+  svg += `<circle cx="40" cy="52" r="1.5" fill="#0c0"/>`;
+  svg += `<text x="44" y="54" font-family="Arial" font-size="4" fill="#333">V</text>`;
+  svg += `<circle cx="40" cy="58" r="1.5" fill="#0c0"/>`;
+  svg += `<text x="44" y="60" font-family="Arial" font-size="4" fill="#333">A</text>`;
+  svg += `<circle cx="40" cy="64" r="1.5" fill="#0c0"/>`;
+  svg += `<text x="44" y="66" font-family="Arial" font-size="4" fill="#333">kW</text>`;
+
+  // Кнопка и мелкий текст
+  svg += `<circle cx="40" cy="76" r="5" fill="#444" stroke="#222" stroke-width="1"/>`;
+  svg += `<text x="8" y="80" font-family="Arial" font-size="3" fill="#666">6s...!</text>`;
+  svg += `<text x="8" y="85" font-family="Arial" font-size="3" fill="#666">10s...Imax</text>`;
+
+  // Три крутилки
+  svg += `<circle cx="10" cy="100" r="6" fill="#eee" stroke="#333" stroke-width="1"/>`;
+  svg += `<line x1="10" y1="100" x2="10" y2="95" stroke="#000" stroke-width="1.5"/>`;
+  svg += `<text x="10" y="112" font-family="Arial" font-size="3" fill="#333" text-anchor="middle">t(s)</text>`;
+  
+  svg += `<circle cx="26" cy="100" r="6" fill="#eee" stroke="#333" stroke-width="1"/>`;
+  svg += `<line x1="26" y1="100" x2="30" y2="97" stroke="#000" stroke-width="1.5"/>`;
+  svg += `<text x="26" y="112" font-family="Arial" font-size="3" fill="#333" text-anchor="middle">Umin</text>`;
+
+  svg += `<circle cx="42" cy="100" r="6" fill="#eee" stroke="#333" stroke-width="1"/>`;
+  svg += `<line x1="42" y1="100" x2="38" y2="96" stroke="#000" stroke-width="1.5"/>`;
+  svg += `<text x="42" y="112" font-family="Arial" font-size="3" fill="#333" text-anchor="middle">Umax</text>`;
+
+  // Нижняя часть (клеммы L' и N')
+  svg += `<rect x="${padding}" y="115" width="${w-padding*2}" height="10" fill="#e8e8e8" stroke="#999" stroke-width="1"/>`;
+  svg += `<text x="12" y="123" font-family="Arial" font-size="5" fill="#555">L'</text>`;
+  svg += `<text x="38" y="123" font-family="Arial" font-size="5" fill="#555">N'</text>`;
+  svg += `<path d="M 22 116 L 30 116 L 26 122 Z" fill="#666"/>`;
+
+  svg += `</svg>`;
+  return svg;
+}
+
 function generateCHNTSVG(amps = '') {
   const w = 120, h = 160;
   const text = amps ? (amps.length > 3 ? amps.substring(0,3) : amps) + 'A' : '';
@@ -344,7 +410,8 @@ const AUTOMATA = [
   { id: '2P', poles: 2 },
   { id: '3P', poles: 3 },
   { id: '4P', poles: 4 },
-  { id: '250A', poles: 0, type: 'chnt', width: 120, height: 160 } 
+  { id: '250A', poles: 0, type: 'chnt', width: 120, height: 160 },
+  { id: 'Реле', poles: 0, type: 'relay', width: 52.5, height: 195 } // <--- ДОБАВИТЬ ЭТУ СТРОКУ
 ];
 
 const menu = document.getElementById('menu');
@@ -405,6 +472,7 @@ AUTOMATA.forEach(a => {
   const img = document.createElement('img');
   let svg;
   if (a.type === 'chnt') { svg = generateCHNTSVG(); img.style.width = '60px'; } 
+  else if (a.type === 'relay') { svg = generateRelaySVG(); img.style.width = '40px'; } // <--- ДОБАВИТЬ
   else { svg = generateSVG(BASE_WIDTHS[a.poles], a.poles); img.style.width = (BASE_WIDTHS[a.poles] * 0.8) + 'px'; }
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   const label = document.createElement('span'); label.textContent = a.id;
@@ -495,7 +563,9 @@ function spawnBreaker(automata) {
   const wrap = document.createElement('div');
   wrap.className = 'breaker';
   let w, h, svg;
+  
   if (automata.type === 'chnt') { w = automata.width; h = automata.height; } 
+  else if (automata.type === 'relay') { w = automata.width; h = automata.height; } // <--- ДЛЯ РЕЛЕ
   else { w = BASE_WIDTHS[automata.poles]; h = BASE_HEIGHT; }
   
   let spawnX = (-panX + workspace.getBoundingClientRect().width / 2) / zoom - w / 2;
@@ -503,7 +573,6 @@ function spawnBreaker(automata) {
   spawnX = Math.round(spawnX / GRID_BASE) * GRID_BASE;
   spawnY = Math.round(spawnY / GRID_BASE) * GRID_BASE;
   
-  // Если место занято, ищем свободное
   let attempts = 0;
   while (checkCollision({style:{width:w+'px', height:h+'px'}, dataset:{}}, spawnX, spawnY) && attempts < 100) {
     spawnX += GRID_BASE;
@@ -514,12 +583,14 @@ function spawnBreaker(automata) {
   wrap.dataset.type = automata.type || 'std'; wrap.dataset.poles = automata.poles; wrap.dataset.amps = ''; 
   
   const img = document.createElement('img');
-  if (automata.type === 'chnt') { svg = generateCHNTSVG(''); } else { svg = generateSVG(BASE_WIDTHS[automata.poles], automata.poles, ''); }
+  if (automata.type === 'chnt') { svg = generateCHNTSVG(''); } 
+  else if (automata.type === 'relay') { svg = generateRelaySVG(''); } // <--- ДЛЯ РЕЛЕ
+  else { svg = generateSVG(BASE_WIDTHS[automata.poles], automata.poles, ''); }
+  
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   wrap.appendChild(img);
   
   wrap.dataset.x = spawnX; wrap.dataset.y = spawnY;
-  // Устанавливаем начальную позицию через transform
   wrap.style.transform = `translate3d(${spawnX}px, ${spawnY}px, 0)`;
   
   itemsLayer.appendChild(wrap);
@@ -530,7 +601,9 @@ function updateBreakerImage(el, amps) {
   const type = el.dataset.type;
   const poles = parseInt(el.dataset.poles);
   let svg;
-  if (type === 'chnt') { svg = generateCHNTSVG(amps); } else { svg = generateSVG(BASE_WIDTHS[poles], poles, amps); }
+  if (type === 'chnt') { svg = generateCHNTSVG(amps); } 
+  else if (type === 'relay') { svg = generateRelaySVG(amps); } // <--- ДЛЯ РЕЛЕ
+  else { svg = generateSVG(BASE_WIDTHS[poles], poles, amps); }
   const img = el.querySelector('img');
   img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   el.dataset.amps = amps;
