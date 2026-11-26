@@ -50,13 +50,13 @@
   .menu-item span { font-size: 11px; font-weight: bold; color: #2c3e50; margin-top: 4px; }
 
   /* РАБОЧАЯ ОБЛАСТЬ */
-  #workspace {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    background-color: #fafafa;
-    touch-action: none;
-    width: 100%;
+  #workspace { 
+    flex: 1; 
+    position: relative; 
+    overflow: hidden; 
+    background-color: #e8e8e8; /* <--- СДЕЛАЛИ СЕРЫМ */
+    touch-action: none; 
+    width: 100%; 
   }
 
   #gridCanvas {
@@ -718,11 +718,19 @@ function drawGrid() {
   const rect = workspace.getBoundingClientRect();
   const w = rect.width; const h = rect.height;
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, w, h);
+  
+  // Заливаем фон серым (чуть светлее, чем сам фон, чтобы сетка выделялась)
+  ctx.fillStyle = '#e8e8e8'; // <--- Цвет фона
+  ctx.fillRect(0, 0, w, h);
+  
   const step = GRID_BASE * zoom;
   const offsetX = panX % step; const offsetY = panY % step;
-  ctx.strokeStyle = '#d0d0d0'; ctx.lineWidth = 1;
+  
+  // Делаем линии сетки более контрастными (темно-серыми)
+  ctx.strokeStyle = '#c0c0c0'; // <--- Цвет линий сетки
+  ctx.lineWidth = 1;
   ctx.beginPath();
+  
   for (let x = offsetX; x <= w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
   for (let y = offsetY; y <= h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
   ctx.stroke();
