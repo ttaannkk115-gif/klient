@@ -926,12 +926,10 @@ function makeDraggable(el) {
       el.dataset.y = baseY;
       el.style.transform = `translate3d(${baseX}px, ${baseY}px, 0)`;
     } else {
-      // Если всё ок — прилипаем к сетке (только при отпускании)
-      let x = Math.round((parseFloat(el.dataset.x) || 0) / GRID_BASE) * GRID_BASE;
+      // Если всё ок — прилипаем к сетке ТОЛЬКО по вертикали (Y)
+      // А по горизонтали (X) оставляем как есть, чтобы автоматы вставали ровно друг к другу
       let y = Math.round((parseFloat(el.dataset.y) || 0) / GRID_BASE) * GRID_BASE;
-      
-      // Попытка «примагнититься» к соседям (чтобы не было зазоров)
-      // (Опционально: можно усложнить, но пока просто прилипание к сетке)
+      let x = parseFloat(el.dataset.x) || 0; // X не округляем!
       
       el.dataset.x = x; el.dataset.y = y;
       el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
