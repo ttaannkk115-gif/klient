@@ -795,16 +795,43 @@ function spawnBreaker(automata) {
   else if (automata.type === 'rnpp') { w = 52.5; h = 130; }
   else { w = BASE_WIDTHS[automata.poles]; h = BASE_HEIGHT; }
   
-  let spawnX = (-panX + workspace.getBoundingClientRect().width / 2) / zoom - w / 2;
-  let spawnY = (-panY + workspace.getBoundingClientRect().height / 2) / zoom - h / 2;
-  spawnX = Math.round(spawnX / GRID_BASE) * GRID_BASE;
-  spawnY = Math.round(spawnY / GRID_BASE) * GRID_BASE;
-  
-  let attempts = 0;
-  while (checkCollision({style:{width:w+'px', height:h+'px'}, dataset:{}}, spawnX, spawnY) && attempts < 100) {
-    spawnX += GRID_BASE;
-    attempts++;
+  // 1. Получаем видимую область экрана
+  const rect = workspace.getBoundingClientRect();
+  const viewLeft = -panX / zoom;
+  const viewTop = -panY / zoom;
+  const viewWidth = rect.width / zoom;
+  const viewHeight = rect.height / zoom;
+
+  // 2. Начинаем с левого верхнего угла
+  let spawnX = viewLeft;
+  let spawnY = viewTop;
+  let found = false;
+
+  // Ищем в пределах экрана (с запасом вниз на 10 экранов, если всё занято)
+  let maxSearchY = viewTop + (viewHeight * 10); 
+
+  // Проходим по строкам (сверху вниз)
+  for (let y = viewTop; y < maxSearchY && !found; y += GRID_BASE) {
+    // Для каждой строки проходим слева направо
+    for (let x = viewLeft; x < viewLeft + viewWidth; x += 5) { // Шаг 5 пикселей для точности
+      
+      // Если автомат не влезает в экран по ширине, пропускаем эту строку
+      if (x + w > viewLeft + viewWidth) break;
+
+      // Проверяем, свободно ли это место
+      if (!checkCollision({style:{width:w+'px', height:h+'px'}, dataset:{}}, x, y)) {
+        spawnX = x;
+        spawnY = y;
+        found = true;
+        break;
+      }
+    }
+    if (found) break;
   }
+
+  // Округляем финальные координаты
+  spawnX = Math.round(spawnX);
+  spawnY = Math.round(spawnY);
 
   wrap.style.width = w + 'px'; wrap.style.height = h + 'px'; wrap.style.zIndex = ++zIndexCounter;
   wrap.dataset.type = automata.type || 'std'; wrap.dataset.poles = automata.poles || 0; wrap.dataset.amps = ''; 
