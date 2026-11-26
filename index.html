@@ -210,9 +210,64 @@
   }
   #btnCancel { background: #e0e0e0; color: #333; }
   #btnSave { background: #2ecc71; color: #fff; }
+  
+  /* ЭКРАН СТАРТА (ГАЛЕРЕЯ) */
+  #startScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #1a1a1a; z-index: 99999; display: flex; flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .header { padding: 20px; text-align: center; }
+  .header h2 { color: #3498db; font-size: 26px; margin: 0; }
+  .content { flex: 1; padding: 0 20px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+  .btn-new {
+    background: #3498db; color: #fff; border: none; padding: 16px;
+    font-size: 18px; font-weight: bold; border-radius: 12px; width: 100%; max-width: 400px;
+    margin-bottom: 30px; cursor: pointer;
+  }
+  .btn-new:active { transform: scale(0.98); }
+  .saved-title { color: #7f8c8d; font-size: 14px; width: 100%; max-width: 400px; text-align: left; margin-bottom: 15px; letter-spacing: 1px; }
+  .projects-list { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 30px; }
+  .project-item {
+    background: #2a2a2a; border-radius: 12px; padding: 15px;
+    display: flex; align-items: center; gap: 15px; border: 1px solid #3a3a3a;
+  }
+  .project-thumb {
+    width: 60px; height: 60px; background: #e8e8e8; border-radius: 8px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px;
+  }
+  .project-info { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .project-date { color: #bdc3c7; font-size: 12px; }
+  .project-actions { display: flex; gap: 10px; }
+  .btn-open { background: #2ecc71; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  .btn-del { background: #e74c3c; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+  /* КНОПКА СОХРАНЕНИЯ */
+  #saveBtn {
+    position: absolute; bottom: max(24px, env(safe-area-inset-bottom)); left: 24px;
+    width: 60px; height: 60px; background: #3498db; color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 9999; cursor: pointer;
+  }
 </style>
 </head>
 <body>
+
+<!-- ЭКРАН СТАРТА (ГАЛЕРЕЯ) -->
+<div id="startScreen">
+  <div class="header">
+    <h2>VoltMaster Project</h2>
+  </div>
+  
+  <div class="content">
+    <button class="btn-new" onclick="startNewProject()">Создать новый проект</button>
+    
+    <div class="saved-title">СОХРАНЕННЫЕ РАБОТЫ</div>
+    <div id="projectsList" class="projects-list">
+      <!-- Сюда будут добавляться сохранения -->
+    </div>
+  </div>
+</div>
 
 <div id="app">
   <div id="menu"></div>
@@ -225,6 +280,7 @@
     <div id="zoomInfo">100%</div>
 
     <div id="trash">🗑</div>
+    <div id="saveBtn">💾</div>
   </div>
 </div>
 
@@ -1000,6 +1056,127 @@ btnSave.addEventListener('click', () => {
 });
 modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) { modalOverlay.classList.remove('show'); currentEditingEl = null; } });
 modalInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { btnSave.click(); } });
+
+// ==========================================
+// ГАЛЕРЕЯ И СОХРАНЕНИЕ ПРОЕКТОВ
+// ==========================================
+let currentProjectId = null; // ID текущего открытого проекта
+
+function renderProjects() {
+  const list = document.getElementById('projectsList');
+  list.innerHTML = '';
+  const projects = JSON.parse(localStorage.getItem('electroProjects') || '[]');
+  
+  if (projects.length === 0) {
+    list.innerHTML = '<div style="color:#7f8c8d; text-align:center; margin-top:20px;">Нет сохраненных работ</div>';
+    return;
+  }
+
+  projects.sort((a, b) => b.id - a.id); // Новые сверху
+
+  projects.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'project-item';
+    const d = new Date(p.id);
+    const dateStr = `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+
+    div.innerHTML = `
+      <div class="project-thumb">⚡</div>
+      <div class="project-info">
+        <div class="project-date">${dateStr}</div>
+        <div class="project-actions">
+          <button class="btn-open" onclick="loadProject(${p.id})">Открыть</button>
+          <button class="btn-del" onclick="deleteProject(${p.id})">Удалить</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function startNewProject() {
+  currentProjectId = Date.now();
+  document.getElementById('startScreen').style.display = 'none';
+  itemsLayer.innerHTML = ''; // Очищаем поле
+  
+  const withGrid = confirm("Включить сетку на фоне?");
+  if (!withGrid) {
+    gridCanvas.style.display = 'none';
+    workspace.style.backgroundColor = '#2a2a2a';
+  } else {
+    gridCanvas.style.display = 'block';
+    workspace.style.backgroundColor = '#e8e8e8';
+    resizeCanvas();
+  }
+}
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const items = [];
+  document.querySelectorAll('.breaker').forEach(el => {
+    items.push({
+      type: el.dataset.type,
+      poles: el.dataset.poles,
+      amps: el.dataset.amps,
+      x: el.dataset.x,
+      y: el.dataset.y
+    });
+  });
+  
+  let projects = JSON.parse(localStorage.getItem('electroProjects') || '[]');
+  const existingIndex = projects.findIndex(p => p.id === currentProjectId);
+  const projectData = { id: currentProjectId || Date.now(), items: items };
+
+  if (existingIndex >= 0) {
+    projects[existingIndex] = projectData;
+  } else {
+    projects.push(projectData);
+  }
+
+  localStorage.setItem('electroProjects', JSON.stringify(projects));
+  alert('Проект успешно сохранен!');
+});
+
+function loadProject(id) {
+  const projects = JSON.parse(localStorage.getItem('electroProjects') || '[]');
+  const project = projects.find(p => p.id === id);
+  if (!project) return;
+
+  currentProjectId = id;
+  document.getElementById('startScreen').style.display = 'none';
+  itemsLayer.innerHTML = ''; 
+
+  gridCanvas.style.display = 'block';
+  workspace.style.backgroundColor = '#e8e8e8';
+  resizeCanvas();
+
+  project.items.forEach(item => {
+    let config = AUTOMATA.find(a => (a.type || 'std') === item.type);
+    if (!config) return;
+    spawnBreaker(config);
+    const lastEl = itemsLayer.lastElementChild;
+    if (lastEl) {
+      lastEl.dataset.x = item.x;
+      lastEl.dataset.y = item.y;
+      lastEl.style.transform = `translate3d(${item.x}px, ${item.y}px, 0)`;
+      if (item.amps) {
+        lastEl.dataset.amps = item.amps;
+        updateBreakerImage(lastEl, item.amps);
+      }
+    }
+  });
+}
+
+function deleteProject(id) {
+  if (!confirm('Удалить эту работу?')) return;
+  let projects = JSON.parse(localStorage.getItem('electroProjects') || '[]');
+  projects = projects.filter(p => p.id !== id);
+  localStorage.setItem('electroProjects', JSON.stringify(projects));
+  renderProjects();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderProjects();
+});
 
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 </script>
